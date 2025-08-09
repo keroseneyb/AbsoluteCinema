@@ -1,7 +1,13 @@
+import com.android.build.api.variant.BuildConfigField
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.kapt)
+    alias(libs.plugins.kotlin.parcelize)
+    alias(libs.plugins.serialization)
 }
 
 android {
@@ -36,11 +42,44 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
+    }
+}
+
+androidComponents {
+    val key = property("apikey")?.toString() ?: error(
+        "You should add apikey into gradle properties"
+    )
+    onVariants { variant ->
+        variant.buildConfigFields?.put(
+            "CINEMA_API_KEY",
+            BuildConfigField("String", "\"$key\"", "API key for accessing the sevice")
+        )
     }
 }
 
 dependencies {
+    // Dependency Injection
+    implementation(libs.dagger.core)
+    kapt(libs.dagger.compiler)
 
+    // Database (Room)
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
+
+    // Networking & Image loading
+    implementation(libs.retrofit.core)
+    implementation(libs.retrofit.gsonConverter)
+    implementation(libs.coil.compose)
+
+    // Architecture & Core
+    implementation(libs.lifecycle.viewmodel.compose)
+    implementation(libs.serialization.json)
+    implementation(libs.navigation.compose)
+    implementation(libs.kotlinx.coroutines.android)
+
+    // AndroidX & Compose UI
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -49,6 +88,11 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+
+    // Icons
+    implementation(libs.icons)
+
+    // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
