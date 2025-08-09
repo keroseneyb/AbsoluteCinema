@@ -1,4 +1,4 @@
-package com.kerosene.absolutecinema.ui.theme
+package com.kerosene.absolutecinema.presentation.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
