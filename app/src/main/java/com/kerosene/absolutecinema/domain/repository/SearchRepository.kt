@@ -1,8 +1,8 @@
 package com.kerosene.absolutecinema.domain.repository
 
-import com.kerosene.absolutecinema.domain.entity.MovieSearchItem
+import com.kerosene.absolutecinema.domain.entity.Movie
 
 interface SearchRepository {
 
-    suspend fun search(query: String): List<MovieSearchItem>
+    suspend fun search(query: String): List<Movie>
 }

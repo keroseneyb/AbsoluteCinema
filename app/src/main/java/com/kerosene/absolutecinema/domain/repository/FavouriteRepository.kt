@@ -1,12 +1,11 @@
 package com.kerosene.absolutecinema.domain.repository
 
 import com.kerosene.absolutecinema.domain.entity.Movie
-import com.kerosene.absolutecinema.domain.entity.MoviePreview
 import kotlinx.coroutines.flow.Flow
 
 interface FavouriteRepository {
 
-    val favouriteMovies: Flow<List<MoviePreview>>
+    val favouriteMovies: Flow<List<Movie>>
 
     fun observeIsFavourite(movieId: Int): Flow<Boolean>
 
