@@ -71,7 +71,7 @@ dependencies {
     // Networking & Image loading
     implementation(libs.retrofit.core)
     implementation(libs.retrofit.gsonConverter)
-    implementation(libs.coil.compose)
+    implementation(libs.compose.glide)
 
     // Architecture & Core
     implementation(libs.lifecycle.viewmodel.compose)
