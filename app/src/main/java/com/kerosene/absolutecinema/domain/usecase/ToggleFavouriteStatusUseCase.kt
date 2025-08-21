@@ -8,7 +8,7 @@ import javax.inject.Inject
 
 class ToggleFavouriteStatusUseCase @Inject constructor(
     private val favouriteRepository: FavouriteRepository,
-    private val noteRepository: NoteRepository
+    private val noteRepository: NoteRepository,
 ) {
     suspend operator fun invoke(movie: Movie) {
         val isFavourite = favouriteRepository.observeIsFavourite(movie.id).first()
