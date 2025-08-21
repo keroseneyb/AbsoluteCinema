@@ -14,4 +14,4 @@ data class Movie(
     val description: String?,
     val shortDescription: String?,
     val poster: Poster?,
-): Parcelable
+) : Parcelable
