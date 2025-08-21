@@ -7,7 +7,9 @@ import com.kerosene.absolutecinema.domain.entity.Trailer
 interface MovieRepository {
 
     suspend fun getMovieDetails(movieId: Int): Movie
+
     suspend fun getMovies(): List<Movie>
+
     suspend fun getPopularMovies(): List<Movie>
 
     suspend fun getTrailers(movieId: Int): List<Trailer>

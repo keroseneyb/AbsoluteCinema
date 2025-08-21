@@ -6,4 +6,4 @@ import kotlinx.parcelize.Parcelize
 @Parcelize
 data class Poster(
     val url: String?,
-): Parcelable
+) : Parcelable
