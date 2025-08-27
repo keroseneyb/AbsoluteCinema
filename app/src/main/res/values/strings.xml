@@ -1,3 +1,22 @@
 <resources>
     <string name="app_name">AbsoluteCinema</string>
+    <string name="navigation_item_home">Главная</string>
+    <string name="navigation_item_search">Поиск</string>
+    <string name="navigation_item_library">Моя библиотека</string>
+    <string name="rating">Оценка: %1$s</string>
+    <string name="year">Год: %1$d</string>
+    <string name="genre">Жанр: %1$s</string>
+    <string name="country">Страна: %1$s</string>
+    <string name="description">Описание:</string>
+    <string name="trailers">Трейлеры</string>
+    <string name="reviews">Отзывы</string>
+    <string name="error">Ошибка: %1$s</string>
+    <string name="error_details">Ошибка: %1$s</string>
+    <string name="search_home">Поиск</string>
+    <string name="click_load_movies">Нажмите, чтобы загрузить фильмы</string>
+    <string name="load">Загрузить</string>
+    <string name="list_movies_empty">Список фильмов пуст</string>
+    <string name="favourite_movies_empty">Нет избранных фильмов</string>
+    <string name="notes_empty">Нет заметок</string>
+    <string name="query_search">Введите запрос для поиска</string>
 </resources>
