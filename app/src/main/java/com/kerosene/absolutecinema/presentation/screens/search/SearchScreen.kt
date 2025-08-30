@@ -164,7 +164,7 @@ fun SearchBar(
                 shape = RoundedCornerShape(24.dp),
                 value = query,
                 onValueChange = onQueryChange,
-                placeholder = { Text("Введите название фильма") },
+                placeholder = { Text(stringResource(R.string.placeholder_movie_name)) },
                 singleLine = true,
                 modifier = Modifier
                     .weight(1f)
@@ -197,7 +197,7 @@ fun MovieItem(movie: Movie, onClick: () -> Unit) {
             .clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color(0xFFEFEFEF)
+            containerColor = MaterialTheme.colorScheme.surface
         )
     ) {
         Row(
@@ -222,7 +222,9 @@ fun MovieItem(movie: Movie, onClick: () -> Unit) {
                 movie.name?.let {
                     Text(
                         text = it,
-                        style = MaterialTheme.typography.titleMedium,
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            color = MaterialTheme.colorScheme.onSurface
+                        ),
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -231,8 +233,9 @@ fun MovieItem(movie: Movie, onClick: () -> Unit) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = String.format("%.1f", movie.rating.kp),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 )
             }
         }
