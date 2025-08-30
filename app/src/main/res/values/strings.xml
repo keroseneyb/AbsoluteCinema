@@ -19,4 +19,8 @@
     <string name="favourite_movies_empty">Нет избранных фильмов</string>
     <string name="notes_empty">Нет заметок</string>
     <string name="query_search">Введите запрос для поиска</string>
+    <string name="placeholder_enter_text">Введите текст...</string>
+    <string name="msg_no_text">Нет текста</string>
+    <string name="title_note">Заметка</string>
+    <string name="placeholder_movie_name">Введите название фильма</string>
 </resources>
