@@ -38,6 +38,7 @@ import com.kerosene.absolutecinema.R
 import com.kerosene.absolutecinema.domain.entity.Movie
 import com.kerosene.absolutecinema.domain.entity.Note
 import com.kerosene.absolutecinema.getApplicationComponent
+import com.kerosene.absolutecinema.presentation.screens.note.NotesContent
 
 @Composable
 fun LibraryScreen(
@@ -46,6 +47,7 @@ fun LibraryScreen(
 ) {
     val component = getApplicationComponent()
     val viewModel: LibraryViewModel = viewModel(factory = component.getViewModelFactory())
+
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     LibraryScreenContent(
@@ -53,8 +55,7 @@ fun LibraryScreen(
         onTabSelected = viewModel::onTabSelected,
         onMovieClick = onMovieClick,
         onNoteClick = onNoteClick,
-        onToggleFavourite = { movie -> viewModel.toggleFavourite(movie) },
-        modifier = Modifier
+        onToggleFavourite = { movie -> viewModel.toggleFavourite(movie) }
     )
 }
 
@@ -65,13 +66,13 @@ private fun LibraryScreenContent(
     onMovieClick: (Int) -> Unit,
     onNoteClick: (Note) -> Unit,
     onToggleFavourite: (Movie) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier.fillMaxSize()) {
-        when (uiState) {
-            is LibraryScreenUiState.Loading -> LoadingState()
-            is LibraryScreenUiState.Error -> ErrorState(message = uiState.message)
-            is LibraryScreenUiState.Content -> {
+    when (uiState) {
+        is LibraryScreenUiState.Loading -> LoadingState()
+        is LibraryScreenUiState.Error -> ErrorState(message = uiState.message)
+        is LibraryScreenUiState.Content -> {
+            Column(modifier = modifier.fillMaxSize()) {
                 LibraryTabs(
                     selectedTab = uiState.selectedTab,
                     onTabSelected = onTabSelected
@@ -80,11 +81,14 @@ private fun LibraryScreenContent(
                     LibraryScreenUiState.Content.Tab.FAVOURITES -> FavouritesContent(
                         movies = uiState.favouriteMovies,
                         onMovieClick = onMovieClick,
-                        onToggleFavourite = onToggleFavourite
+                        onToggleFavourite = onToggleFavourite,
+                        modifier = Modifier.fillMaxSize()
                     )
+
                     LibraryScreenUiState.Content.Tab.NOTES -> NotesContent(
                         notes = uiState.notes,
                         onNoteClick = onNoteClick,
+                        modifier = Modifier.fillMaxSize()
                     )
                 }
             }
@@ -96,7 +100,7 @@ private fun LibraryScreenContent(
 private fun LibraryTabs(
     selectedTab: LibraryScreenUiState.Content.Tab,
     onTabSelected: (LibraryScreenUiState.Content.Tab) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     TabRow(
         selectedTabIndex = selectedTab.ordinal,
@@ -117,7 +121,7 @@ private fun FavouritesContent(
     movies: List<Movie>,
     onMovieClick: (Int) -> Unit,
     onToggleFavourite: (Movie) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     if (movies.isEmpty()) {
         EmptyState(message = stringResource(R.string.favourite_movies_empty))
@@ -146,7 +150,7 @@ private fun FavouriteMovieItem(
     movie: Movie,
     onMovieClick: (Int) -> Unit,
     onToggleFavourite: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Card(
         modifier = modifier
