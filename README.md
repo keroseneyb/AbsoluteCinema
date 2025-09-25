@@ -12,7 +12,7 @@ https://github.com/user-attachments/assets/11e6ef9e-fe1d-4118-88bf-9065e6dfc638
 
 2. **Все фильмы** — полный список фильмов.
 
-Также есть **кнопка поиска**.
+Также есть **кнопка поиска**
 
 https://github.com/user-attachments/assets/951d827f-13e7-49c9-bc6a-85a56a544c21
 
