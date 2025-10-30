@@ -75,7 +75,7 @@ fun MainScreen() {
                             navigationState.navigateToMovieDetails(movie.id)
                         },
                         onBackClick = {
-                            navigationState.navController.popBackStack()
+                            navigationState.navigateTo(Screen.HomeGraph.route)
                         }
                     )
                 },
