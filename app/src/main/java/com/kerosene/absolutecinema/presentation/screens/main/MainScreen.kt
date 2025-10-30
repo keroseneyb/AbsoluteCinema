@@ -39,13 +39,14 @@ fun MainScreen() {
                 val currentRoute = navBackStackEntry?.destination?.route
 
                 items.forEach { item ->
-                    val selected = currentRoute == item.screen.route
+                    val itemRoute = getNavigationItemRoute(item)
+                    val selected = currentRoute == itemRoute
 
                     NavigationBarItem(
                         selected = selected,
                         onClick = {
                             if (!selected) {
-                                navigationState.navigateTo(item.screen.route)
+                                navigationState.navigateTo(itemRoute)
                             }
                         },
                         icon = { Icon(item.icon, contentDescription = null) },
@@ -101,6 +102,14 @@ fun MainScreen() {
                 }
             )
         }
+    }
+}
+
+private fun getNavigationItemRoute(item: NavigationItem): String {
+    return when(item) {
+        NavigationItem.Home -> Screen.HomeGraph.route
+        NavigationItem.Search -> Screen.SearchGraph.route
+        NavigationItem.Library -> Screen.LibraryGraph.route
     }
 }
 
