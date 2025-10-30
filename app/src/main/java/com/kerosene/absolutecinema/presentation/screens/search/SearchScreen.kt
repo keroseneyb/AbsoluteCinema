@@ -105,8 +105,12 @@ fun SearchScreen(
         when (val state = uiState) {
             is SearchUiState.Initial -> EmptySearchState()
             is SearchUiState.Loading -> SearchLoadingState()
-            is SearchUiState.Success -> SearchSuccessState(movies = state.movies, onMovieClick = onMovieClick)
+            is SearchUiState.Success -> SearchSuccessState(
+                movies = state.movies,
+                onMovieClick = onMovieClick
+            )
             is SearchUiState.Error -> ShowErrorMessage(message = state.message)
+            is SearchUiState.Empty -> NoResultsFound()
         }
     }
 }
@@ -170,16 +174,12 @@ private fun EmptySearchState() {
 @Composable
 private fun SearchSuccessState(
     movies: List<Movie>,
-    onMovieClick: (Movie) -> Unit
+    onMovieClick: (Movie) -> Unit,
 ) {
-    if (movies.isEmpty()) {
-        NoResultsFound()
-    } else {
-        SearchResults(
-            movies = movies,
-            onMovieClick = onMovieClick
-        )
-    }
+    SearchResults(
+        movies = movies,
+        onMovieClick = onMovieClick
+    )
 }
 
 @Composable
@@ -264,8 +264,6 @@ private fun ShowErrorMessage(
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 private fun MovieItem(movie: Movie, onClick: () -> Unit) {
-    if (!movie.isMovieValid(movie)) return
-
     Card(
         modifier = Modifier
             .fillMaxWidth()
