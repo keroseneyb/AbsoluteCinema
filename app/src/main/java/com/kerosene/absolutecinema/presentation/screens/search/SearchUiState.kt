@@ -11,4 +11,6 @@ sealed class SearchUiState {
     data class Success(val movies: List<Movie>) : SearchUiState()
 
     data class Error(val message: String) : SearchUiState()
+
+    object Empty : SearchUiState()
 }
