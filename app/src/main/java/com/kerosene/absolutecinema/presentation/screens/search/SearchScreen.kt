@@ -57,13 +57,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.kerosene.absolutecinema.R
-import com.kerosene.absolutecinema.domain.entity.Movie
 import com.kerosene.absolutecinema.getApplicationComponent
+import com.kerosene.absolutecinema.presentation.screens.search.model.MovieSearchUiModel
 
 @Composable
 fun SearchScreen(
     onBackClick: () -> Unit,
-    onMovieClick: (Movie) -> Unit,
+    onMovieClick: (Int) -> Unit,
 ) {
     val component = getApplicationComponent()
     val viewModel: SearchViewModel = viewModel(factory = component.getViewModelFactory())
@@ -101,11 +101,10 @@ fun SearchScreen(
                 focusManager = focusManager
             )
         }
-
         when (val state = uiState) {
             is SearchUiState.Initial -> EmptySearchState()
             is SearchUiState.Loading -> SearchLoadingState()
-            is SearchUiState.Success -> SearchSuccessState(
+            is SearchUiState.Success -> SearchResults(
                 movies = state.movies,
                 onMovieClick = onMovieClick
             )
@@ -128,9 +127,8 @@ private fun SearchTextField(
     OutlinedTextField(
         value = query,
         onValueChange = onQueryChange,
-        modifier = modifier
-            .focusRequester(focusRequester),
-        placeholder = { Text("Поиск фильмов") },
+        modifier = modifier.focusRequester(focusRequester),
+        placeholder = { Text(stringResource(R.string.search_movies)) },
         leadingIcon = {
             IconButton(onClick = onSearch) {
                 Icon(Icons.Default.Search, contentDescription = null)
@@ -172,17 +170,6 @@ private fun EmptySearchState() {
 }
 
 @Composable
-private fun SearchSuccessState(
-    movies: List<Movie>,
-    onMovieClick: (Movie) -> Unit,
-) {
-    SearchResults(
-        movies = movies,
-        onMovieClick = onMovieClick
-    )
-}
-
-@Composable
 private fun SearchLoadingState() {
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -210,13 +197,13 @@ private fun NoResultsFound() {
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
-                text = "Ничего не найдено",
+                text = stringResource(R.string.not_found),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center
             )
             Text(
-                text = "Попробуйте изменить поисковый запрос",
+                text = stringResource(R.string.try_change_search_query),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
@@ -227,8 +214,8 @@ private fun NoResultsFound() {
 
 @Composable
 private fun SearchResults(
-    movies: List<Movie>,
-    onMovieClick: (Movie) -> Unit
+    movies: List<MovieSearchUiModel>,
+    onMovieClick: (Int) -> Unit
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -239,7 +226,7 @@ private fun SearchResults(
             items = movies,
             key = { it.id }
         ) { movie ->
-            MovieItem(movie = movie, onClick = { onMovieClick(movie) })
+            MovieItem(movie = movie, onClick = { onMovieClick(movie.id) })
         }
     }
 }
@@ -260,10 +247,9 @@ private fun ShowErrorMessage(
     }
 }
 
-
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
-private fun MovieItem(movie: Movie, onClick: () -> Unit) {
+private fun MovieItem(movie: MovieSearchUiModel, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -281,7 +267,7 @@ private fun MovieItem(movie: Movie, onClick: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             GlideImage(
-                model = movie.poster?.url,
+                model = movie.poster,
                 contentDescription = movie.name,
                 modifier = Modifier
                     .size(60.dp)
@@ -293,20 +279,18 @@ private fun MovieItem(movie: Movie, onClick: () -> Unit) {
             Column(
                 modifier = Modifier.weight(1f)
             ) {
-                movie.name?.let {
-                    Text(
-                        text = it,
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            color = MaterialTheme.colorScheme.onSurface
-                        ),
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
+                Text(
+                    text = movie.name,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        color = MaterialTheme.colorScheme.onSurface
+                    ),
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = String.format("%.1f", movie.rating.kp),
+                    text = String.format("%.1f", movie.rating),
                     style = MaterialTheme.typography.bodySmall.copy(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
