@@ -31,11 +31,11 @@ fun MovieDto.toMovie(): Movie = Movie(
 
 fun RatingDto.toRating(): Rating = Rating(kp = kp)
 fun CountryDto.toCountry(): Country = Country(name = name)
-fun PosterDto.toPoster(): Poster = Poster(url = url)
+fun PosterDto.toPoster(): Poster = Poster(url = url ?: "")
 fun GenreDto.toGenre(): Genre = Genre(name = name)
 
-fun MovieTrailersDto.toTrailer(): Trailer {
-    val dto = videosContainer.trailers.first()
+fun MovieTrailersDto.toTrailer(): Trailer? {
+    val dto = videosContainer.trailers.firstOrNull() ?: return null
     return Trailer(
         url = dto.trailerUrl,
         name = dto.name
@@ -67,7 +67,7 @@ fun MovieDbModel.toMovieEntity(): Movie = Movie(
     year = year,
     description = description ?: "",
     shortDescription = shortDescription ?: "",
-    poster = Poster(url = posterUrl),
+    poster = Poster(url = posterUrl ?: ""),
     rating = Rating(ratingKp),
     country = countries.map { Country(it) },
     genre = genres.map { Genre(it) }

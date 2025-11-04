@@ -2,8 +2,10 @@ package com.kerosene.absolutecinema.presentation.screens.search
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.kerosene.absolutecinema.domain.entity.Movie
 import com.kerosene.absolutecinema.domain.usecase.SearchMovieUseCase
+import com.kerosene.absolutecinema.presentation.screens.search.mapping.toSearchUiModels
+import com.kerosene.absolutecinema.presentation.screens.search.model.MovieSearchUiModel
+import com.kerosene.absolutecinema.presentation.util.handleApiCall
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -38,31 +40,33 @@ class SearchViewModel @Inject constructor(
     }
 
     private suspend fun validMovies(query: String) {
-        _uiState.value = SearchUiState.Loading
-        try {
-            val allMovies = searchMovieUseCase(query)
-            val validMovies = filterValidMovies(allMovies)
+        handleApiCall(
+            apiCall = { searchMovieUseCase(query) },
+            onLoading = {
+                _uiState.value = SearchUiState.Loading
+            },
+            onSuccess = { movies ->
+                val validMovies = filterValidMovies(movies.toSearchUiModels())
 
-            _uiState.value = if (validMovies.isEmpty()) {
-                SearchUiState.Empty
-            } else {
-                SearchUiState.Success(validMovies)
+                _uiState.value = if (validMovies.isEmpty()) {
+                    SearchUiState.Empty
+                } else {
+                    SearchUiState.Success(validMovies)
+                }
+            },
+            onError = { message ->
+                _uiState.value = SearchUiState.Error(message)
             }
-        } catch (e: Exception) {
-            _uiState.value = SearchUiState.Error(e.message ?: UNKNOWN_ERROR)
-        }
+        )
     }
 
-    private fun filterValidMovies(movies: List<Movie>): List<Movie> {
+    private fun filterValidMovies(movies: List<MovieSearchUiModel>): List<MovieSearchUiModel> {
         return movies.filter { movie ->
-            movie.name != null &&
-            movie.poster?.url != null &&
-            movie.description != null
+            with(movie) {
+                name.isNotEmpty() &&
+                poster.isNotEmpty() &&
+                rating != 0.0
+            }
         }
-    }
-
-    companion object {
-
-        private const val UNKNOWN_ERROR = "Unknown error"
     }
 }

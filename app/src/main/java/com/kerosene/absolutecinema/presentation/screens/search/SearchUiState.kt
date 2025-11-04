@@ -1,6 +1,6 @@
 package com.kerosene.absolutecinema.presentation.screens.search
 
-import com.kerosene.absolutecinema.domain.entity.Movie
+import com.kerosene.absolutecinema.presentation.screens.search.model.MovieSearchUiModel
 
 sealed class SearchUiState {
 
@@ -8,7 +8,7 @@ sealed class SearchUiState {
 
     object Loading : SearchUiState()
 
-    data class Success(val movies: List<Movie>) : SearchUiState()
+    data class Success(val movies: List<MovieSearchUiModel>) : SearchUiState()
 
     data class Error(val message: String) : SearchUiState()
 
