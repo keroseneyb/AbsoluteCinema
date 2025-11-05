@@ -2,13 +2,15 @@ package com.kerosene.absolutecinema.presentation.screens.details
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.kerosene.absolutecinema.domain.entity.Movie
 import com.kerosene.absolutecinema.domain.entity.Note
 import com.kerosene.absolutecinema.domain.usecase.GetMovieDetailsUseCase
 import com.kerosene.absolutecinema.domain.usecase.GetReviewsUseCase
 import com.kerosene.absolutecinema.domain.usecase.GetTrailersUseCase
 import com.kerosene.absolutecinema.domain.usecase.ObserveFavouriteStateUseCase
 import com.kerosene.absolutecinema.domain.usecase.ToggleFavouriteStatusUseCase
+import com.kerosene.absolutecinema.presentation.screens.details.model.MovieDetailsUiModel
+import com.kerosene.absolutecinema.presentation.screens.details.utils.OpenTrailerHelper
+import com.kerosene.absolutecinema.presentation.utils.handleApiCall
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,9 +25,10 @@ class MovieDetailsViewModel @Inject constructor(
     private val getReviewsUseCase: GetReviewsUseCase,
     private val toggleFavouriteStatusUseCase: ToggleFavouriteStatusUseCase,
     private val observeFavouriteStateUseCase: ObserveFavouriteStateUseCase,
+    private val openTrailerHelper: OpenTrailerHelper,
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow<MovieDetailsUiState>(MovieDetailsUiState.Initial)
+    private val _uiState = MutableStateFlow<MovieDetailsUiState>(MovieDetailsUiState.Loading)
     val uiState: StateFlow<MovieDetailsUiState> = _uiState.asStateFlow()
 
     private val _isFavourite = MutableStateFlow(false)
@@ -36,32 +39,33 @@ class MovieDetailsViewModel @Inject constructor(
 
     fun loadMovie(movieId: Int) {
         viewModelScope.launch {
-            _uiState.value = MovieDetailsUiState.Loading
+            preLoadMovie(movieId)
+        }
+    }
 
-            try {
+    private suspend fun preLoadMovie(movieId: Int) {
+        handleApiCall(
+            apiCall = {
                 supervisorScope {
                     val movieDeferred = async { getMovieDetailsUseCase(movieId) }
                     val trailersDeferred = async { getTrailersUseCase(movieId) }
                     val reviewsDeferred = async { getReviewsUseCase(movieId) }
 
-                    val movie = movieDeferred.await()
-                    val trailers = trailersDeferred.await()
-                    val reviews = reviewsDeferred.await()
-
-                    _uiState.value = MovieDetailsUiState.Success(
-                        movie = movie,
-                        trailers = trailers,
-                        reviews = reviews
+                    MovieDetailsUiModel(
+                        details = movieDeferred.await(),
+                        trailers = trailersDeferred.await(),
+                        reviews = reviewsDeferred.await()
                     )
-
-                    observeFavourite(movie.id)
                 }
-            } catch (e: Exception) {
-                _uiState.value = MovieDetailsUiState.Error(
-                    message = e.message ?: UNKNOWN_ERROR
-                )
+            },
+            onSuccess = { uiModel ->
+                _uiState.value = MovieDetailsUiState.Success(uiModel)
+                observeFavourite(uiModel.details.id)
+            },
+            onError = { message ->
+                _uiState.value = MovieDetailsUiState.Error(message)
             }
-        }
+        )
     }
 
     fun observeFavourite(movieId: Int) {
@@ -72,14 +76,13 @@ class MovieDetailsViewModel @Inject constructor(
         }
     }
 
-    fun toggleFavourite(movie: Movie) {
+    fun toggleFavourite(movieId: Int, title: String) {
         viewModelScope.launch {
-            toggleFavouriteStatusUseCase(movie)
+            toggleFavouriteStatusUseCase(movieId, title)
         }
     }
 
-    companion object {
-
-        private const val UNKNOWN_ERROR = "An unknown error occurred"
+    fun openTrailer(url: String) {
+        openTrailerHelper.openTrailer(url)
     }
 }
