@@ -23,4 +23,7 @@
     <string name="msg_no_text">Нет текста</string>
     <string name="title_note">Заметка</string>
     <string name="placeholder_movie_name">Введите название фильма</string>
+    <string name="not_found">Ничего не найдено</string>
+    <string name="try_change_search_query">Попробуйте изменить поисковый запрос</string>
+    <string name="search_movies">Поиск фильмов</string>
 </resources>
