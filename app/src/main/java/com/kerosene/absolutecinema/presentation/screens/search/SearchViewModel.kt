@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.kerosene.absolutecinema.domain.usecase.SearchMovieUseCase
 import com.kerosene.absolutecinema.presentation.screens.search.mapping.toSearchUiModels
 import com.kerosene.absolutecinema.presentation.screens.search.model.MovieSearchUiModel
-import com.kerosene.absolutecinema.presentation.util.handleApiCall
+import com.kerosene.absolutecinema.presentation.utils.handleApiCall
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow

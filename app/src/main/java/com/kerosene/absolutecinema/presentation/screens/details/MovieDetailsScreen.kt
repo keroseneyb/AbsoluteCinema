@@ -1,7 +1,5 @@
 package com.kerosene.absolutecinema.presentation.screens.details
 
-import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -38,7 +36,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -47,70 +44,91 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.kerosene.absolutecinema.R
-import com.kerosene.absolutecinema.domain.entity.Movie
 import com.kerosene.absolutecinema.domain.entity.Review
 import com.kerosene.absolutecinema.domain.entity.ReviewType
 import com.kerosene.absolutecinema.domain.entity.Trailer
 import com.kerosene.absolutecinema.getApplicationComponent
+import com.kerosene.absolutecinema.presentation.screens.details.model.MovieDetailsUiModel
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 fun MovieDetailsScreen(
     movieId: Int,
 ) {
-
     val component = getApplicationComponent()
     val viewModel: MovieDetailsViewModel = viewModel(factory = component.getViewModelFactory())
     val uiState by viewModel.uiState.collectAsState()
-    val isFavorite by viewModel.isFavourite.collectAsState()
+    val isFavourite by viewModel.isFavourite.collectAsState()
 
     LaunchedEffect(movieId) { viewModel.loadMovie(movieId) }
 
-    when (uiState) {
-        is MovieDetailsUiState.Initial, is MovieDetailsUiState.Loading -> ShowLoading()
+    when (val state = uiState) {
+        is MovieDetailsUiState.Loading -> ShowLoading()
+        is MovieDetailsUiState.Error -> ShowError(state.message)
+        is MovieDetailsUiState.Success -> ShowMovieDetails(
+            isFavourite = isFavourite,
+            onToggleFavourite = { movieId, title ->
+                viewModel.toggleFavourite(movieId = movieId, title = title)
+            },
+            onTrailerClick = {
+                viewModel.openTrailer(it)
+            },
+            movie = state.movieDetails
+        )
+    }
+}
 
-        is MovieDetailsUiState.Error -> {
-            val message = (uiState as MovieDetailsUiState.Error).message
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(text = stringResource(R.string.error_details, message))
-            }
+@Composable
+private fun ShowLoading() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        CircularProgressIndicator()
+    }
+}
+
+@Composable
+private fun ShowError(message: String) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(text = stringResource(R.string.error_details, message))
+    }
+}
+
+@Composable
+private fun ShowMovieDetails(
+    isFavourite: Boolean,
+    onToggleFavourite: (Int, String) -> Unit,
+    onTrailerClick: (String) -> Unit,
+    movie: MovieDetailsUiModel,
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = 16.dp)
+    ) {
+        item {
+            MoviePoster(
+                movie = movie,
+                isFavourite = isFavourite,
+                onToggleFavourite = onToggleFavourite
+            )
         }
 
-        is MovieDetailsUiState.Success -> {
-            val data = uiState as MovieDetailsUiState.Success
-            val movie = data.movie
-            val trailers = data.trailers
-            val reviews = data.reviews
+        item {
+            MovieInfoCard(movie = movie)
+        }
 
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 16.dp)
-            ) {
-                item {
-                    MoviePoster(
-                        movie = movie,
-                        isFavorite = isFavorite,
-                        onToggleFavourite = { viewModel.toggleFavourite(movie) }
-                    )
-                }
+        if (movie.trailers.isNotEmpty()) {
+            item { SectionHeader(stringResource(R.string.trailers)) }
+            items(items = movie.trailers) { TrailerItem(trailer = it, onTrailerClick = onTrailerClick) }
+        }
 
-                item {
-                    MovieInfoCard(movie = movie)
-                }
-
-                if (trailers.isNotEmpty()) {
-                    item { SectionHeader(stringResource(R.string.trailers)) }
-                    items(trailers) { TrailerItem(trailer = it) }
-                }
-
-                if (reviews.isNotEmpty()) {
-                    item { SectionHeader(stringResource(R.string.reviews)) }
-                    items(reviews) { ReviewItem(review = it) }
-                }
-            }
+        if (movie.reviews.isNotEmpty()) {
+            item { SectionHeader(stringResource(R.string.reviews)) }
+            items(items = movie.reviews) { ReviewItem(review = it) }
         }
     }
 }
@@ -118,14 +136,14 @@ fun MovieDetailsScreen(
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 private fun MoviePoster(
-    movie: Movie,
-    isFavorite: Boolean,
-    onToggleFavourite: () -> Unit,
+    movie: MovieDetailsUiModel,
+    isFavourite: Boolean,
+    onToggleFavourite: (Int, String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Box(modifier = modifier.fillMaxWidth()) {
         GlideImage(
-            model = movie.poster?.url,
+            model = movie.details.poster?.url,
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier = Modifier
@@ -138,20 +156,20 @@ private fun MoviePoster(
                 )
         )
         IconButton(
-            onClick = onToggleFavourite,
+            onClick = { onToggleFavourite(movie.details.id, movie.details.name ?: "") },
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(16.dp)
                 .background(Color.White.copy(alpha = 0.8f), CircleShape)
         ) {
             Icon(
-                imageVector = if (isFavorite) {
+                imageVector = if (isFavourite) {
                     Icons.Default.Favorite
                 } else {
                     Icons.Default.FavoriteBorder
                 },
                 contentDescription = null,
-                tint = if (isFavorite) {
+                tint = if (isFavourite) {
                     Color.Red
                 } else {
                     Color.Gray
@@ -163,7 +181,7 @@ private fun MoviePoster(
 
 @Composable
 private fun MovieInfoCard(
-    movie: Movie,
+    movie: MovieDetailsUiModel,
     modifier: Modifier = Modifier,
 ) {
     Card(
@@ -175,28 +193,28 @@ private fun MovieInfoCard(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                movie.name ?: "",
+                movie.details.name ?: "",
                 style = MaterialTheme.typography.titleMedium
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = stringResource(R.string.rating, movie.rating.kp),
+                text = stringResource(R.string.rating, movie.details.rating.kp),
                 style = MaterialTheme.typography.bodyMedium
             )
             Text(
-                stringResource(R.string.year, movie.year),
+                stringResource(R.string.year, movie.details.year),
                 style = MaterialTheme.typography.bodyMedium
             )
             Text(
                 text = stringResource(
                     R.string.genre,
-                    movie.genre.joinToString { it.name }),
+                    movie.details.genre.joinToString { it.name }),
                 style = MaterialTheme.typography.bodyMedium
             )
             Text(
                 text = stringResource(
                     R.string.country,
-                    movie.country.joinToString { it.name }),
+                    movie.details.country.joinToString { it.name }),
                 style = MaterialTheme.typography.bodyMedium
             )
             Spacer(modifier = Modifier.height(8.dp))
@@ -204,7 +222,7 @@ private fun MovieInfoCard(
                 stringResource(R.string.description),
                 style = MaterialTheme.typography.titleSmall
             )
-            movie.description?.let {
+            movie.details.description?.let {
                 Text(
                     text = it,
                     style = MaterialTheme.typography.bodyMedium
@@ -215,7 +233,7 @@ private fun MovieInfoCard(
 }
 
 @Composable
-fun SectionHeader(title: String) {
+private fun SectionHeader(title: String) {
     Text(
         text = title,
         style = MaterialTheme.typography.titleMedium,
@@ -224,16 +242,15 @@ fun SectionHeader(title: String) {
 }
 
 @Composable
-fun TrailerItem(trailer: Trailer) {
-    val context = LocalContext.current
+private fun TrailerItem(
+    trailer: Trailer,
+    onTrailerClick: (String) -> Unit
+) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
-            .clickable {
-                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(trailer.url))
-                context.startActivity(intent)
-            },
+            .clickable { onTrailerClick(trailer.url) },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(
             containerColor = Color(0xFFE4E9FB)
@@ -264,7 +281,7 @@ fun TrailerItem(trailer: Trailer) {
 }
 
 @Composable
-fun ReviewItem(review: Review) {
+private fun ReviewItem(review: Review) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -294,15 +311,5 @@ fun ReviewItem(review: Review) {
                 modifier = Modifier.padding(top = 4.dp)
             )
         }
-    }
-}
-
-@Composable
-fun ShowLoading() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        CircularProgressIndicator()
     }
 }
