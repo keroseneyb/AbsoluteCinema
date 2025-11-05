@@ -1,4 +1,4 @@
-package com.kerosene.absolutecinema.presentation.util
+package com.kerosene.absolutecinema.presentation.utils
 
 object Constants {
     const val UNKNOWN_ERROR = "Unknown error"
@@ -6,7 +6,7 @@ object Constants {
 
 suspend inline fun <T> handleApiCall(
     crossinline apiCall: suspend () -> T,
-    crossinline onLoading: () -> Unit,
+    crossinline onLoading: () -> Unit = {},
     crossinline onSuccess: (T) -> Unit,
     crossinline onError: (String) -> Unit
 ) {
