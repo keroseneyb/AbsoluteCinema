@@ -1,4 +1,4 @@
-package com.kerosene.absolutecinema.presentation
+package com.kerosene.absolutecinema.presentation.di
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
