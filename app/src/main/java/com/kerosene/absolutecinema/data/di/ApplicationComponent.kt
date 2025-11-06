@@ -1,7 +1,8 @@
 package com.kerosene.absolutecinema.data.di
 
 import android.content.Context
-import com.kerosene.absolutecinema.presentation.ViewModelFactory
+import com.kerosene.absolutecinema.presentation.di.ViewModelFactory
+import com.kerosene.absolutecinema.presentation.di.PresentationModule
 import dagger.BindsInstance
 import dagger.Component
 
@@ -9,7 +10,8 @@ import dagger.Component
 @Component(
     modules = [
         DataModule::class,
-        ViewModelModule::class
+        ViewModelModule::class,
+        PresentationModule::class
     ]
 )
 interface ApplicationComponent {
