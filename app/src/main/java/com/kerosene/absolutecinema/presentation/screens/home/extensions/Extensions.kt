@@ -1,4 +1,4 @@
-package com.kerosene.absolutecinema.presentation.screens.extensions
+package com.kerosene.absolutecinema.presentation.screens.home.extensions
 
 import com.kerosene.absolutecinema.presentation.screens.home.HomeScreenUiState
 import com.kerosene.absolutecinema.presentation.screens.home.model.MoviePreviewUiModel
