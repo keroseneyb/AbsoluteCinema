@@ -12,7 +12,7 @@ interface MovieRepository {
 
     suspend fun getPopularMovies(): List<Movie>
 
-    suspend fun getTrailers(movieId: Int): List<Trailer>
+    suspend fun getTrailers(movieId: Int): Result<List<Trailer>>
 
     suspend fun getReviews(movieId: Int): List<Review>
 }

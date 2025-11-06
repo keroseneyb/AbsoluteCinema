@@ -71,8 +71,8 @@ fun MainScreen() {
                 },
                 searchScreenContent = {
                     SearchScreen(
-                        onMovieClick = { movie ->
-                            navigationState.navigateToMovieDetails(movie.id)
+                        onMovieClick = { movieId ->
+                            navigationState.navigateToMovieDetails(movieId)
                         },
                         onBackClick = {
                             navigationState.navigateTo(Screen.HomeGraph.route)
@@ -84,8 +84,8 @@ fun MainScreen() {
                         onMovieClick = { movieId ->
                             navigationState.navigateToMovieDetails(movieId)
                         },
-                        onNoteClick = { note ->
-                            navigationState.navigateToEditNote(note.movieId)
+                        onNoteClick = { noteId ->
+                            navigationState.navigateToEditNote(noteId)
                         }
                     )
                 },
