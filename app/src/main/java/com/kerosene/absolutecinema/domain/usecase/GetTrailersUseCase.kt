@@ -8,5 +8,5 @@ class GetTrailersUseCase @Inject constructor(
     private val repository: MovieRepository,
 ) {
 
-    suspend operator fun invoke(movieId: Int): List<Trailer> = repository.getTrailers(movieId)
+    suspend operator fun invoke(movieId: Int): List<Trailer> = repository.getTrailers(movieId).getOrElse { emptyList() }
 }

@@ -1,5 +1,6 @@
 package com.kerosene.absolutecinema.data.repository
 
+import android.util.Log
 import com.kerosene.absolutecinema.data.mapper.toMovie
 import com.kerosene.absolutecinema.data.mapper.toReview
 import com.kerosene.absolutecinema.data.mapper.toTrailer
@@ -26,8 +27,12 @@ class MovieRepositoryImpl @Inject constructor(
         return apiService.loadPopularMovies().movies.map { it.toMovie() }
     }
 
-    override suspend fun getTrailers(movieId: Int): List<Trailer> {
-        return apiService.loadTrailers(movieId).docs.map { it.toTrailer() }
+    override suspend fun getTrailers(movieId: Int): Result<List<Trailer>> {
+        return runCatching {
+            apiService.loadTrailers(movieId).docs.mapNotNull { it.toTrailer() }
+        }.onFailure { exception ->
+            Log.e("MovieRepository", "Error loading trailers: ${exception.message}", exception)
+        }
     }
 
     override suspend fun getReviews(movieId: Int): List<Review> {
