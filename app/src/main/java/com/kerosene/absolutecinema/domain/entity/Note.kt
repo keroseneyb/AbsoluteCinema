@@ -1,8 +1,7 @@
 package com.kerosene.absolutecinema.domain.entity
 
 data class Note(
-    val id: Int,
-    val movieId: Int,
+    val noteId: Int,
     val title: String,
     val content: String,
 )
