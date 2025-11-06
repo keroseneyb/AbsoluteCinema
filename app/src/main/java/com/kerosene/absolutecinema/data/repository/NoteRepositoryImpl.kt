@@ -1,9 +1,8 @@
 package com.kerosene.absolutecinema.data.repository
 
 import com.kerosene.absolutecinema.data.local.db.NotesDao
-import com.kerosene.absolutecinema.data.mapper.noteToDbModel
+import com.kerosene.absolutecinema.data.local.model.NoteDbModel
 import com.kerosene.absolutecinema.data.mapper.noteToEntity
-import com.kerosene.absolutecinema.domain.entity.Movie
 import com.kerosene.absolutecinema.domain.entity.Note
 import com.kerosene.absolutecinema.domain.repository.NoteRepository
 import kotlinx.coroutines.flow.Flow
@@ -24,18 +23,17 @@ class NoteRepositoryImpl @Inject constructor(
             .map { it.noteToEntity() }
     }
 
-    override suspend fun createEmptyNote(movie: Movie) {
-        val newNote = Note(
-            movieId = movie.id,
-            title = movie.name ?: "",
-            content = "",
-            id = movie.id
+    override suspend fun createEmptyNote(movieId: Int, title: String) {
+        val newNote = NoteDbModel(
+            noteId = movieId,
+            title = title,
+            content = ""
         )
-        notesDao.insertNote(newNote.noteToDbModel())
+        notesDao.insertNote(newNote)
     }
 
-    override suspend fun updateNote(note: Note) {
-        notesDao.updateNote(note.noteToDbModel())
+    override suspend fun updateNoteContent(noteId: Int, content: String) {
+        notesDao.updateNoteContent(noteId, content)
     }
 
     override suspend fun removeNoteByMovieId(movieId: Int) {
