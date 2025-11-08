@@ -1,5 +1,8 @@
 package com.kerosene.absolutecinema.presentation.screens.home
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,10 +13,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
@@ -24,18 +32,29 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
+import com.bumptech.glide.integration.compose.GlideImage
+import com.bumptech.glide.integration.compose.placeholder
 import com.kerosene.absolutecinema.R
-import com.kerosene.absolutecinema.domain.entity.Movie
 import com.kerosene.absolutecinema.getApplicationComponent
-import com.kerosene.absolutecinema.presentation.extensions.getMoviesForSelectedTab
+import com.kerosene.absolutecinema.presentation.screens.home.model.MoviePreviewUiModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 @Composable
 fun HomeScreen(
@@ -52,37 +71,38 @@ fun HomeScreen(
         onSearchClick = onSearchClick,
         onTabSelected = viewModel::onTabSelected,
         onMovieClick = onMovieClick,
-        onLoadDataClick = viewModel::loadMovies,
         modifier = modifier
     )
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun HomeScreenContent(
     uiState: HomeScreenUiState,
     onSearchClick: () -> Unit,
-    onTabSelected: (HomeScreenUiState.Tab) -> Unit,
+    onTabSelected: (Tab) -> Unit,
     onMovieClick: (Int) -> Unit,
-    onLoadDataClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val coroutineScope = rememberCoroutineScope()
+    val popularGridState = rememberSaveable(saver = LazyGridState.Saver) { LazyGridState() }
+    val allMoviesGridState = rememberSaveable(saver = LazyGridState.Saver) { LazyGridState() }
+
     Column(modifier = modifier.fillMaxSize()) {
         SearchButton(onClick = onSearchClick)
 
         when (uiState) {
-            is HomeScreenUiState.Initial -> InitialState(onLoadDataClick = onLoadDataClick)
             is HomeScreenUiState.Loading -> LoadingState()
-            is HomeScreenUiState.Error -> ErrorState(message = uiState.message)
-            is HomeScreenUiState.Content -> {
-                HomeTabs(
-                    uiState = uiState,
-                    onTabSelected = onTabSelected
-                )
-                MoviesContent(
-                    movies = uiState.getMoviesForSelectedTab(),
-                    onMovieClick = onMovieClick
-                )
-            }
+            is HomeScreenUiState.Error -> ErrorState(uiState.message)
+            is HomeScreenUiState.Success -> ShowContent(
+                tabsState = uiState.tabs,
+                onTabSelected = onTabSelected,
+                onMovieClick = onMovieClick,
+                popularGridState = popularGridState,
+                allMoviesGridState = allMoviesGridState,
+                coroutineScope = coroutineScope,
+                modifier = Modifier.fillMaxSize()
+            )
         }
     }
 }
@@ -114,46 +134,6 @@ private fun SearchButton(
 }
 
 @Composable
-private fun HomeTabs(
-    uiState: HomeScreenUiState,
-    onTabSelected: (HomeScreenUiState.Tab) -> Unit,
-) {
-    val selectedTabIndex = when (uiState) {
-        is HomeScreenUiState.Content -> uiState.selectedTab.ordinal
-        else -> 0
-    }
-
-    TabRow(selectedTabIndex = selectedTabIndex) {
-        HomeScreenUiState.Tab.entries.forEachIndexed { index, tab ->
-            Tab(
-                selected = selectedTabIndex == index,
-                onClick = { onTabSelected(tab) },
-                text = { Text(tab.displayName) }
-            )
-        }
-    }
-}
-
-@Composable
-private fun InitialState(onLoadDataClick: () -> Unit) {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                text = stringResource(R.string.click_load_movies),
-                style = MaterialTheme.typography.bodyLarge
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(onClick = onLoadDataClick) {
-                Text(text = stringResource(R.string.load))
-            }
-        }
-    }
-}
-
-@Composable
 private fun LoadingState() {
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -176,17 +156,72 @@ private fun ErrorState(message: String) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun ShowContent(
+    tabsState: TabsUiState,
+    onTabSelected: (Tab) -> Unit,
+    onMovieClick: (Int) -> Unit,
+    popularGridState: LazyGridState,
+    allMoviesGridState: LazyGridState,
+    coroutineScope: CoroutineScope,
+    modifier: Modifier = Modifier,
+) {
+    val pagerState = rememberPagerState(
+        initialPage = tabsState.selectedTab.ordinal,
+        pageCount = { Tab.entries.size }
+    )
+
+    LaunchedEffect(pagerState.currentPage) {
+        val selectedTab = Tab.entries[pagerState.currentPage]
+        if (selectedTab != tabsState.selectedTab) {
+            onTabSelected(selectedTab)
+        }
+    }
+
+    Column(modifier = modifier.fillMaxSize()) {
+        TabRow(selectedTabIndex = pagerState.currentPage) {
+            Tab.entries.forEachIndexed { index, tab ->
+                Tab(
+                    selected = pagerState.currentPage == index,
+                    onClick = {
+                        coroutineScope.launch { pagerState.animateScrollToPage(index) }
+                    },
+                    text = { Text(tab.displayName) }
+                )
+            }
+        }
+
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxSize()
+        ) { page ->
+            val tab = Tab.entries[page]
+            val movies = tabsState.moviesFor(tab)
+            val gridState = if (tab == Tab.POPULAR) popularGridState else allMoviesGridState
+
+            MoviesContent(
+                movies = movies,
+                onMovieClick = onMovieClick,
+                gridState = gridState
+            )
+        }
+    }
+}
+
 @Composable
 private fun MoviesContent(
-    movies: List<Movie>,
+    movies: List<MoviePreviewUiModel>,
     onMovieClick: (Int) -> Unit,
+    gridState: LazyGridState,
 ) {
     if (movies.isEmpty()) {
         EmptyMoviesList()
     } else {
         MoviesGrid(
             movies = movies,
-            onMovieClick = onMovieClick
+            onMovieClick = onMovieClick,
+            gridState = gridState
         )
     }
 }
@@ -202,9 +237,10 @@ private fun EmptyMoviesList() {
 }
 
 @Composable
-fun MoviesGrid(
-    movies: List<Movie>,
+private fun MoviesGrid(
+    movies: List<MoviePreviewUiModel>,
     onMovieClick: (Int) -> Unit,
+    gridState: LazyGridState,
 ) {
     if (movies.isEmpty()) {
         Box(
@@ -215,6 +251,7 @@ fun MoviesGrid(
         }
     } else {
         LazyVerticalGrid(
+            state = gridState,
             columns = GridCells.Fixed(2),
             contentPadding = PaddingValues(4.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -230,5 +267,64 @@ fun MoviesGrid(
                 }
             }
         }
+    }
+}
+
+@OptIn(ExperimentalGlideComposeApi::class)
+@Composable
+private fun MoviePreviewCard(
+    movie: MoviePreviewUiModel,
+    onClick: (Int) -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .width(160.dp)
+            .height(320.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .clickable(onClick = { onClick(movie.id) })
+    ) {
+        GlideImage(
+            model = movie.poster,
+            contentDescription = null,
+            modifier = Modifier
+                .matchParentSize()
+                .clip(RoundedCornerShape(8.dp)),
+            contentScale = ContentScale.Crop,
+            loading = placeholder(R.drawable.placeholder),
+            failure = placeholder(R.drawable.error)
+        )
+        RatingBox(
+            rating = movie.rating,
+            modifier = Modifier
+                .padding(4.dp)
+                .align(Alignment.TopEnd)
+        )
+    }
+}
+
+@Composable
+private fun RatingBox(
+    rating: Double,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .background(Color.Black, RoundedCornerShape(6.dp))
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            painter = painterResource(R.drawable.kinopoisk_item),
+            contentDescription = null,
+            tint = Color.Unspecified,
+            modifier = Modifier.size(24.dp)
+        )
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(
+            text = String.format("%.1f", rating),
+            color = Color.White,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Bold
+        )
     }
 }
