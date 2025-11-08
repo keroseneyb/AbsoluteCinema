@@ -1,13 +1,19 @@
 package com.kerosene.absolutecinema.presentation.screens.home
 
+import android.R.id.tabs
+import android.util.Log.e
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kerosene.absolutecinema.domain.usecase.GetMoviesUseCase
 import com.kerosene.absolutecinema.domain.usecase.GetPopularMoviesUseCase
+import com.kerosene.absolutecinema.presentation.screens.home.mapping.toMoviePreviewUiModels
+import com.kerosene.absolutecinema.presentation.utils.handleApiCall
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 import javax.inject.Inject
 
 class HomeViewModel @Inject constructor(
@@ -15,42 +21,50 @@ class HomeViewModel @Inject constructor(
     private val getPopularMoviesUseCase: GetPopularMoviesUseCase,
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow<HomeScreenUiState>(HomeScreenUiState.Initial)
+    private val _uiState = MutableStateFlow<HomeScreenUiState>(HomeScreenUiState.Loading)
     val uiState: StateFlow<HomeScreenUiState> = _uiState
 
-
-    fun loadMovies() {
+    init {
         viewModelScope.launch {
-            _uiState.value = HomeScreenUiState.Initial
-            _uiState.value = HomeScreenUiState.Loading
-            try {
-
-                val popularMovies = getPopularMoviesUseCase()
-                val allMovies = getMoviesUseCase()
-
-                _uiState.value = HomeScreenUiState.Content(
-                    popularMovies = popularMovies,
-                    allMovies = allMovies,
-                    selectedTab = HomeScreenUiState.Tab.POPULAR
-                )
-            } catch (e: Exception) {
-                _uiState.value = HomeScreenUiState.Error(e.message ?: LOAD_ERROR)
-            }
+            loadMovies()
         }
     }
 
-    fun onTabSelected(tab: HomeScreenUiState.Tab) {
+    suspend fun loadMovies() {
+        handleApiCall(
+            apiCall = {
+                supervisorScope {
+                    val popularDeferred = async { getPopularMoviesUseCase().toMoviePreviewUiModels() }
+                    val allDeferred = async { getMoviesUseCase().toMoviePreviewUiModels() }
+
+                    val popularMovies = popularDeferred.await()
+                    val allMovies = allDeferred.await()
+
+                    TabsUiState(
+                        selectedTab = Tab.POPULAR,
+                        popularMovies = popularMovies,
+                        allMovies = allMovies
+                    )
+                }
+            },
+            onSuccess = { tabs ->
+                _uiState.value = HomeScreenUiState.Success(tabs)
+            },
+            onError = { message ->
+                _uiState.value = HomeScreenUiState.Error(message)
+            }
+        )
+    }
+
+    fun onTabSelected(tab: Tab) {
         _uiState.update { currentState ->
-            if (currentState is HomeScreenUiState.Content) {
-                currentState.copy(selectedTab = tab)
+            if (currentState is HomeScreenUiState.Success) {
+                currentState.copy(
+                    tabs = currentState.tabs.copy(selectedTab = tab)
+                )
             } else {
                 currentState
             }
         }
-    }
-
-    companion object {
-
-        private const val LOAD_ERROR = "Error loading data"
     }
 }
