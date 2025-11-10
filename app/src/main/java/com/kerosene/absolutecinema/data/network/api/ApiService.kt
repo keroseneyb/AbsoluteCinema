@@ -10,10 +10,16 @@ import retrofit2.http.Query
 
 interface ApiService {
 
+    @GET("movie?selectField=rating.kp&search=7-10&sortField=votes.kp&sortType=-1")
+    suspend fun loadPagingAllMovies(
+        @Query("page") page: Int,
+        @Query("limit") limit: Int,
+    ): MovieResponse
+
     @GET("movie?lists=popular-films&selectFields=&rating.kp=1-10")
-    suspend fun loadPopularMovies(
-        @Query("page") page: Int = 1,
-        @Query("limit") limit: Int = 30,
+    suspend fun loadPagingPopularMovies(
+        @Query("page") page: Int,
+        @Query("limit") limit: Int,
     ): MovieResponse
 
     @GET("movie/{id}")
@@ -24,12 +30,6 @@ interface ApiService {
     @GET("movie/search")
     suspend fun searchMovie(
         @Query("query") query: String,
-    ): MovieResponse
-
-    @GET("movie?selectField=rating.kp&search=7-10&sortField=votes.kp&sortType=-1")
-    suspend fun loadAllMovies(
-        @Query("page") page: Int = 1,
-        @Query("limit") limit: Int = 30,
     ): MovieResponse
 
     @GET("movie?selectFields=videos")

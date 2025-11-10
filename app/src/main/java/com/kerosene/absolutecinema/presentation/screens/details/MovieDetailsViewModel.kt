@@ -2,7 +2,6 @@ package com.kerosene.absolutecinema.presentation.screens.details
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.kerosene.absolutecinema.domain.entity.Note
 import com.kerosene.absolutecinema.domain.usecase.GetMovieDetailsUseCase
 import com.kerosene.absolutecinema.domain.usecase.GetReviewsUseCase
 import com.kerosene.absolutecinema.domain.usecase.GetTrailersUseCase
@@ -33,9 +32,6 @@ class MovieDetailsViewModel @Inject constructor(
 
     private val _isFavourite = MutableStateFlow(false)
     val isFavourite: StateFlow<Boolean> = _isFavourite.asStateFlow()
-
-    private val _note = MutableStateFlow<Note?>(null)
-    val note: StateFlow<Note?> = _note.asStateFlow()
 
     fun loadMovie(movieId: Int) {
         viewModelScope.launch {

@@ -18,8 +18,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -36,7 +37,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,6 +47,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.paging.LoadState
+import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemKey
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.bumptech.glide.integration.compose.placeholder
@@ -66,8 +70,13 @@ fun HomeScreen(
     val viewModel: HomeViewModel = viewModel(factory = component.getViewModelFactory())
     val uiState by viewModel.uiState.collectAsState()
 
+    val popularMovies = viewModel.popularMoviesFlow.collectAsLazyPagingItems()
+    val allMovies = viewModel.allMoviesFlow.collectAsLazyPagingItems()
+
     HomeScreenContent(
         uiState = uiState,
+        popularMovies = popularMovies,
+        allMovies = allMovies,
         onSearchClick = onSearchClick,
         onTabSelected = viewModel::onTabSelected,
         onMovieClick = onMovieClick,
@@ -79,14 +88,17 @@ fun HomeScreen(
 @Composable
 private fun HomeScreenContent(
     uiState: HomeScreenUiState,
+    popularMovies: LazyPagingItems<MoviePreviewUiModel>,
+    allMovies: LazyPagingItems<MoviePreviewUiModel>,
     onSearchClick: () -> Unit,
     onTabSelected: (Tab) -> Unit,
     onMovieClick: (Int) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val coroutineScope = rememberCoroutineScope()
-    val popularGridState = rememberSaveable(saver = LazyGridState.Saver) { LazyGridState() }
-    val allMoviesGridState = rememberSaveable(saver = LazyGridState.Saver) { LazyGridState() }
+    val pagerState = rememberPagerState(
+        pageCount = { Tab.entries.size }
+    )
 
     Column(modifier = modifier.fillMaxSize()) {
         SearchButton(onClick = onSearchClick)
@@ -94,15 +106,23 @@ private fun HomeScreenContent(
         when (uiState) {
             is HomeScreenUiState.Loading -> LoadingState()
             is HomeScreenUiState.Error -> ErrorState(uiState.message)
-            is HomeScreenUiState.Success -> ShowContent(
-                tabsState = uiState.tabs,
-                onTabSelected = onTabSelected,
-                onMovieClick = onMovieClick,
-                popularGridState = popularGridState,
-                allMoviesGridState = allMoviesGridState,
-                coroutineScope = coroutineScope,
-                modifier = Modifier.fillMaxSize()
-            )
+            is HomeScreenUiState.Success -> {
+                LaunchedEffect(uiState.selectedTab) {
+                    val page = uiState.selectedTab.ordinal
+                    if (pagerState.currentPage != page) {
+                        pagerState.scrollToPage(page)
+                    }
+                }
+                ShowContent(
+                    pagerState = pagerState,
+                    selectedTab = uiState.selectedTab,
+                    onTabSelected = onTabSelected,
+                    onMovieClick = onMovieClick,
+                    coroutineScope = coroutineScope,
+                    popularMovies = popularMovies,
+                    allMovies = allMovies
+                )
+            }
         }
     }
 }
@@ -158,71 +178,74 @@ private fun ErrorState(message: String) {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun ShowContent(
-    tabsState: TabsUiState,
+fun ShowContent(
+    pagerState: PagerState,
+    selectedTab: Tab,
     onTabSelected: (Tab) -> Unit,
     onMovieClick: (Int) -> Unit,
-    popularGridState: LazyGridState,
-    allMoviesGridState: LazyGridState,
     coroutineScope: CoroutineScope,
-    modifier: Modifier = Modifier,
+    popularMovies: LazyPagingItems<MoviePreviewUiModel>,
+    allMovies: LazyPagingItems<MoviePreviewUiModel>,
 ) {
-    val pagerState = rememberPagerState(
-        initialPage = tabsState.selectedTab.ordinal,
-        pageCount = { Tab.entries.size }
-    )
+    val popularGridState = rememberLazyGridState()
+    val allGridState = rememberLazyGridState()
 
     LaunchedEffect(pagerState.currentPage) {
-        val selectedTab = Tab.entries[pagerState.currentPage]
-        if (selectedTab != tabsState.selectedTab) {
-            onTabSelected(selectedTab)
-        }
+        val newTab = Tab.entries[pagerState.currentPage]
+        if (newTab != selectedTab) onTabSelected(newTab)
     }
 
-    Column(modifier = modifier.fillMaxSize()) {
+    Column(Modifier.fillMaxSize()) {
         TabRow(selectedTabIndex = pagerState.currentPage) {
             Tab.entries.forEachIndexed { index, tab ->
                 Tab(
                     selected = pagerState.currentPage == index,
-                    onClick = {
-                        coroutineScope.launch { pagerState.animateScrollToPage(index) }
-                    },
+                    onClick = { coroutineScope.launch { pagerState.animateScrollToPage(index) } },
                     text = { Text(tab.displayName) }
                 )
             }
         }
 
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier.fillMaxSize()
-        ) { page ->
-            val tab = Tab.entries[page]
-            val movies = tabsState.moviesFor(tab)
-            val gridState = if (tab == Tab.POPULAR) popularGridState else allMoviesGridState
-
-            MoviesContent(
-                movies = movies,
-                onMovieClick = onMovieClick,
-                gridState = gridState
-            )
+        HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
+            when (Tab.entries[page]) {
+                Tab.POPULAR -> MoviesPagingContent(
+                    movies = popularMovies,
+                    onMovieClick = onMovieClick,
+                    gridState = popularGridState
+                )
+                Tab.ALL -> MoviesPagingContent(
+                    movies = allMovies,
+                    onMovieClick = onMovieClick,
+                    gridState = allGridState
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun MoviesContent(
-    movies: List<MoviePreviewUiModel>,
+private fun MoviesPagingContent(
+    movies: LazyPagingItems<MoviePreviewUiModel>,
     onMovieClick: (Int) -> Unit,
-    gridState: LazyGridState,
+    gridState: LazyGridState? = null
 ) {
-    if (movies.isEmpty()) {
-        EmptyMoviesList()
-    } else {
-        MoviesGrid(
-            movies = movies,
-            onMovieClick = onMovieClick,
-            gridState = gridState
-        )
+    val state = gridState ?: rememberLazyGridState()
+    val refreshLoadState = movies.loadState.refresh
+
+    when (refreshLoadState) {
+        is LoadState.Loading -> LoadingState()
+        is LoadState.Error -> ErrorState(refreshLoadState.error.localizedMessage ?: "Unknown error")
+        is LoadState.NotLoading -> {
+            if (movies.itemCount == 0) {
+                EmptyMoviesList()
+            } else {
+                MoviesPagingGrid(
+                    movies = movies,
+                    onMovieClick = onMovieClick,
+                    gridState = state
+                )
+            }
+        }
     }
 }
 
@@ -237,31 +260,24 @@ private fun EmptyMoviesList() {
 }
 
 @Composable
-private fun MoviesGrid(
-    movies: List<MoviePreviewUiModel>,
+private fun MoviesPagingGrid(
+    movies: LazyPagingItems<MoviePreviewUiModel>,
     onMovieClick: (Int) -> Unit,
     gridState: LazyGridState,
 ) {
-    if (movies.isEmpty()) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(text = stringResource(R.string.list_movies_empty))
-        }
-    } else {
-        LazyVerticalGrid(
-            state = gridState,
-            columns = GridCells.Fixed(2),
-            contentPadding = PaddingValues(4.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxSize()
-        ) {
-            items(
-                items = movies,
-                key = { it.id }
-            ) { movie ->
+    LazyVerticalGrid(
+        state = gridState,
+        columns = GridCells.Fixed(2),
+        contentPadding = PaddingValues(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxSize()
+    ) {
+        items(
+            count = movies.itemCount,
+            key = movies.itemKey { it.id }
+        ) { index ->
+            movies[index]?.let { movie ->
                 MoviePreviewCard(movie = movie) {
                     onMovieClick(movie.id)
                 }

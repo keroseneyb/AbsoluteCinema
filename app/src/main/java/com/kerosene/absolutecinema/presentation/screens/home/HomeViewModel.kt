@@ -1,70 +1,55 @@
 package com.kerosene.absolutecinema.presentation.screens.home
 
-import android.R.id.tabs
-import android.util.Log.e
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.kerosene.absolutecinema.domain.usecase.GetMoviesUseCase
-import com.kerosene.absolutecinema.domain.usecase.GetPopularMoviesUseCase
-import com.kerosene.absolutecinema.presentation.screens.home.mapping.toMoviePreviewUiModels
-import com.kerosene.absolutecinema.presentation.utils.handleApiCall
-import kotlinx.coroutines.async
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
+import androidx.paging.map
+import com.kerosene.absolutecinema.domain.usecase.GetMoviesPagedUseCase
+import com.kerosene.absolutecinema.domain.usecase.GetPopularPagedMoviesUseCase
+import com.kerosene.absolutecinema.presentation.screens.home.mapping.toMoviePreviewUiModel
+import com.kerosene.absolutecinema.presentation.screens.home.model.MoviePreviewUiModel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.supervisorScope
 import javax.inject.Inject
 
 class HomeViewModel @Inject constructor(
-    private val getMoviesUseCase: GetMoviesUseCase,
-    private val getPopularMoviesUseCase: GetPopularMoviesUseCase,
+    private val getPopularPagedMoviesUseCase: GetPopularPagedMoviesUseCase,
+    private val getMoviesPagedUseCase: GetMoviesPagedUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<HomeScreenUiState>(HomeScreenUiState.Loading)
     val uiState: StateFlow<HomeScreenUiState> = _uiState
 
-    init {
-        viewModelScope.launch {
-            loadMovies()
-        }
-    }
-
-    suspend fun loadMovies() {
-        handleApiCall(
-            apiCall = {
-                supervisorScope {
-                    val popularDeferred = async { getPopularMoviesUseCase().toMoviePreviewUiModels() }
-                    val allDeferred = async { getMoviesUseCase().toMoviePreviewUiModels() }
-
-                    val popularMovies = popularDeferred.await()
-                    val allMovies = allDeferred.await()
-
-                    TabsUiState(
-                        selectedTab = Tab.POPULAR,
-                        popularMovies = popularMovies,
-                        allMovies = allMovies
-                    )
+    val allMoviesFlow: Flow<PagingData<MoviePreviewUiModel>> =
+        getMoviesPagedUseCase()
+            .cachedIn(viewModelScope)
+            .map { pagingData ->
+                pagingData.map {
+                    it.toMoviePreviewUiModel()
                 }
-            },
-            onSuccess = { tabs ->
-                _uiState.value = HomeScreenUiState.Success(tabs)
-            },
-            onError = { message ->
-                _uiState.value = HomeScreenUiState.Error(message)
             }
-        )
+
+    val popularMoviesFlow: Flow<PagingData<MoviePreviewUiModel>> =
+        getPopularPagedMoviesUseCase()
+            .cachedIn(viewModelScope)
+            .map { pagingData ->
+                pagingData.map { movie ->
+                    movie.toMoviePreviewUiModel()
+                }
+            }
+
+    init {
+        _uiState.value = HomeScreenUiState.Success(Tab.POPULAR)
     }
 
     fun onTabSelected(tab: Tab) {
-        _uiState.update { currentState ->
-            if (currentState is HomeScreenUiState.Success) {
-                currentState.copy(
-                    tabs = currentState.tabs.copy(selectedTab = tab)
-                )
-            } else {
-                currentState
-            }
+        _uiState.update { current ->
+            if (current is HomeScreenUiState.Success) current.copy(selectedTab = tab)
+            else current
         }
     }
 }
