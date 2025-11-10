@@ -1,23 +1,9 @@
 package com.kerosene.absolutecinema.presentation.screens.home
 
-import com.kerosene.absolutecinema.presentation.screens.home.model.MoviePreviewUiModel
-
 sealed class HomeScreenUiState {
     object Loading : HomeScreenUiState()
     data class Error(val message: String) : HomeScreenUiState()
-    data class Success(val tabs: TabsUiState) : HomeScreenUiState()
-}
-
-data class TabsUiState(
-    val selectedTab: Tab,
-    val popularMovies: List<MoviePreviewUiModel>,
-    val allMovies: List<MoviePreviewUiModel>,
-) {
-    fun moviesFor(tab: Tab = selectedTab): List<MoviePreviewUiModel> =
-        when (tab) {
-            Tab.POPULAR -> popularMovies
-            Tab.ALL -> allMovies
-        }
+    data class Success(val selectedTab: Tab) : HomeScreenUiState()
 }
 
 enum class Tab {
