@@ -3,8 +3,8 @@ package com.kerosene.absolutecinema.data.di
 import androidx.lifecycle.ViewModel
 import com.kerosene.absolutecinema.presentation.screens.details.MovieDetailsViewModel
 import com.kerosene.absolutecinema.presentation.screens.home.HomeViewModel
-import com.kerosene.absolutecinema.presentation.screens.library.LibraryViewModel
-import com.kerosene.absolutecinema.presentation.screens.note.NoteViewModel
+import com.kerosene.absolutecinema.presentation.screens.library.favourites.LibraryViewModel
+import com.kerosene.absolutecinema.presentation.screens.library.notes.NoteViewModel
 import com.kerosene.absolutecinema.presentation.screens.search.SearchViewModel
 import dagger.Binds
 import dagger.Module
