@@ -19,8 +19,8 @@ import com.kerosene.absolutecinema.presentation.navigation.Screen
 import com.kerosene.absolutecinema.presentation.navigation.rememberNavigationState
 import com.kerosene.absolutecinema.presentation.screens.details.MovieDetailsScreen
 import com.kerosene.absolutecinema.presentation.screens.home.HomeScreen
-import com.kerosene.absolutecinema.presentation.screens.library.LibraryScreen
-import com.kerosene.absolutecinema.presentation.screens.note.EditNoteScreen
+import com.kerosene.absolutecinema.presentation.screens.library.favourites.LibraryScreen
+import com.kerosene.absolutecinema.presentation.screens.library.notes.EditNoteScreen
 import com.kerosene.absolutecinema.presentation.screens.search.SearchScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -62,7 +62,7 @@ fun MainScreen() {
                 homeScreenContent = {
                     HomeScreen(
                         onSearchClick = {
-                            navigationState.navigateTo(Screen.Search.route)
+                            navigationState.navigateTo(Screen.SearchGraph.route)
                         },
                         onMovieClick = { movieId ->
                             navigationState.navigateToMovieDetails(movieId)
