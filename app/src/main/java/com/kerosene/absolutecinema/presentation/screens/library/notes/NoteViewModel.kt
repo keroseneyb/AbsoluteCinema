@@ -1,4 +1,4 @@
-package com.kerosene.absolutecinema.presentation.screens.note
+package com.kerosene.absolutecinema.presentation.screens.library.notes
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -41,8 +41,9 @@ class NoteViewModel @Inject constructor(
         val current = _note.value ?: return
         val newContent = _text.value.trim()
         if (current.content == newContent) return
+
         viewModelScope.launch {
-            updateNoteUseCase(current.copy(content = newContent))
+            updateNoteUseCase(current.noteId, newContent)
         }
     }
 }
