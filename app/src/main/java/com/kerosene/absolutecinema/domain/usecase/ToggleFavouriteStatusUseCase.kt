@@ -14,10 +14,17 @@ class ToggleFavouriteStatusUseCase @Inject constructor(
 
         if (isFavourite) {
             favouriteRepository.removeFromFavourite(movieId)
-            noteRepository.removeNoteByMovieId(movieId)
         } else {
             favouriteRepository.addToFavourite(movieId)
-            noteRepository.createEmptyNote(movieId, title)
+            val existingNote = try {
+                noteRepository.getNoteByMovieId(movieId).first()
+                true
+            } catch (e: Exception) {
+                false
+            }
+            if (!existingNote) {
+                noteRepository.createEmptyNote(movieId, title)
+            }
         }
     }
 }
