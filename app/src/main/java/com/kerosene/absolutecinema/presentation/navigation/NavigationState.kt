@@ -5,6 +5,7 @@ import androidx.compose.runtime.remember
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.kerosene.absolutecinema.presentation.navigation.utils.popToStartDestinationOfGraph
 
 class NavigationState(
     val navController: NavHostController,
@@ -19,8 +20,30 @@ class NavigationState(
         }
     }
 
-    fun navigateToMovieDetails(movieId: Int) {
-        navController.navigate(Screen.MovieDetails.getRouteWithArgs(movieId.toString()))
+    fun navigateToTab(route: String, isSelected: Boolean) {
+        if (isSelected) {
+            popToRootOfTab(route)
+        } else {
+            switchToTab(route)
+        }
+    }
+
+    private fun popToRootOfTab(route: String) {
+        navController.popToStartDestinationOfGraph(route)
+    }
+
+    private fun switchToTab(route: String) {
+        navController.navigate(route) {
+            popUpTo(navController.graph.findStartDestination().id) {
+                saveState = true
+            }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
+
+    fun navigateToMovieDetails(movieId: Int, fromGraph: String) {
+        navController.navigate(Screen.MovieDetails.getRouteWithArgs(fromGraph, movieId.toString()))
     }
 
     fun navigateToEditNote(movieId: Int) {
