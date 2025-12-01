@@ -1,9 +1,8 @@
 package com.kerosene.absolutecinema.domain.entity
 
-import android.os.Parcelable
-import kotlinx.parcelize.Parcelize
+import kotlinx.serialization.Serializable
 
-@Parcelize
+@Serializable
 data class Movie(
     val id: Int,
     val name: String?,
@@ -14,4 +13,4 @@ data class Movie(
     val description: String?,
     val shortDescription: String?,
     val poster: Poster?,
-) : Parcelable
+)
