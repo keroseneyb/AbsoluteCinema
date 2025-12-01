@@ -29,7 +29,10 @@ fun NavGraphBuilder.homeScreenNavGraph(
         popExitTransition = { popExitTransitionHorizontal() }
     ) {
         composable(Screen.Home.route) { homeScreenContent() }
-        movieDetailsComposable(movieDetailsScreenContent)
+        movieDetailsComposable(
+            route = Screen.MovieDetails.getRoutePattern(Screen.HomeGraph.route),
+            movieDetailsScreenContent = movieDetailsScreenContent
+        )
     }
 }
 
@@ -46,7 +49,10 @@ fun NavGraphBuilder.searchScreenNavGraph(
         popExitTransition = { popExitTransitionHorizontal() }
     ) {
         composable(Screen.Search.route) { searchScreenContent() }
-        movieDetailsComposable(movieDetailsScreenContent)
+        movieDetailsComposable(
+            route = Screen.MovieDetails.getRoutePattern(Screen.SearchGraph.route),
+            movieDetailsScreenContent= movieDetailsScreenContent
+        )
     }
 }
 
@@ -64,16 +70,20 @@ fun NavGraphBuilder.libraryScreenNavGraph(
         popExitTransition = { popExitTransitionHorizontal() }
     ) {
         composable(Screen.Library.route) { libraryScreenContent() }
-        movieDetailsComposable(movieDetailsScreenContent)
+        movieDetailsComposable(
+            route = Screen.MovieDetails.getRoutePattern(Screen.LibraryGraph.route),
+            movieDetailsScreenContent = movieDetailsScreenContent
+        )
         editNoteComposable(editNoteScreenContent)
     }
 }
 
 fun NavGraphBuilder.movieDetailsComposable(
+    route: String,
     movieDetailsScreenContent: @Composable (String) -> Unit,
 ) {
     composable(
-        route = Screen.ROUTE_MOVIE_DETAILS,
+        route = route,
         arguments = listOf(navArgument(Screen.KEY_MOVIE_ID) {
             type = NavType.StringType
         })
