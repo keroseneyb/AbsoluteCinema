@@ -10,10 +10,15 @@ sealed class Screen(
 
     object MovieDetails : Screen(ROUTE_MOVIE_DETAILS) {
 
-        private const val ROUTE_BASE = "details"
+        private const val KEY_MOVIE_ID = "movieId"
+        private const val ROUTE_PATH = "details"
 
-        fun getRouteWithArgs(movieId: String): String {
-            return "$ROUTE_BASE/$movieId"
+        fun getRoutePattern(graphRoute: String): String {
+            return "$graphRoute/$ROUTE_PATH/{$KEY_MOVIE_ID}"
+        }
+
+        fun getRouteWithArgs(graphRoute: String, movieId: String): String {
+            return "$graphRoute/$ROUTE_PATH/$movieId"
         }
     }
 

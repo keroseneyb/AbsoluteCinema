@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.kerosene.absolutecinema.presentation.navigation.AppNavGraph
 import com.kerosene.absolutecinema.presentation.navigation.NavigationItem
@@ -36,19 +37,17 @@ fun MainScreen() {
         bottomBar = {
             NavigationBar {
                 val navBackStackEntry by navigationState.navController.currentBackStackEntryAsState()
-                val currentRoute = navBackStackEntry?.destination?.route
+                val currentDestination = navBackStackEntry?.destination
 
                 items.forEach { item ->
-                    val itemRoute = getNavigationItemRoute(item)
-                    val selected = currentRoute == itemRoute
+                    val itemRoute = item.screen.route
+                    val selected = currentDestination?.hierarchy?.any {
+                        it.route == itemRoute
+                    } == true
 
                     NavigationBarItem(
                         selected = selected,
-                        onClick = {
-                            if (!selected) {
-                                navigationState.navigateTo(itemRoute)
-                            }
-                        },
+                        onClick = { navigationState.navigateToTab(itemRoute, selected) },
                         icon = { Icon(item.icon, contentDescription = null) },
                         label = { Text(text = stringResource(id = item.titleResId)) }
                     )
@@ -65,14 +64,14 @@ fun MainScreen() {
                             navigationState.navigateTo(Screen.SearchGraph.route)
                         },
                         onMovieClick = { movieId ->
-                            navigationState.navigateToMovieDetails(movieId)
+                            navigationState.navigateToMovieDetails(movieId, Screen.HomeGraph.route)
                         }
                     )
                 },
                 searchScreenContent = {
                     SearchScreen(
                         onMovieClick = { movieId ->
-                            navigationState.navigateToMovieDetails(movieId)
+                            navigationState.navigateToMovieDetails(movieId, Screen.SearchGraph.route)
                         },
                         onBackClick = {
                             navigationState.navigateTo(Screen.HomeGraph.route)
@@ -82,7 +81,7 @@ fun MainScreen() {
                 libraryScreenContent = {
                     LibraryScreen(
                         onMovieClick = { movieId ->
-                            navigationState.navigateToMovieDetails(movieId)
+                            navigationState.navigateToMovieDetails(movieId, Screen.LibraryGraph.route)
                         },
                         onNoteClick = { noteId ->
                             navigationState.navigateToEditNote(noteId)
@@ -102,14 +101,6 @@ fun MainScreen() {
                 }
             )
         }
-    }
-}
-
-private fun getNavigationItemRoute(item: NavigationItem): String {
-    return when(item) {
-        NavigationItem.Home -> Screen.HomeGraph.route
-        NavigationItem.Search -> Screen.SearchGraph.route
-        NavigationItem.Library -> Screen.LibraryGraph.route
     }
 }
 
