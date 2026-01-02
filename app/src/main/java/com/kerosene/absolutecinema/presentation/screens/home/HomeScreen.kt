@@ -1,5 +1,10 @@
 package com.kerosene.absolutecinema.presentation.screens.home
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -24,9 +29,11 @@ import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Tab
@@ -35,7 +42,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,6 +59,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
 import androidx.paging.compose.collectAsLazyPagingItems
+import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
@@ -190,35 +200,83 @@ fun ShowContent(
     val popularGridState = rememberLazyGridState()
     val allGridState = rememberLazyGridState()
 
+    val currentGridState = when (pagerState.currentPage) {
+        0 -> popularGridState
+        else -> allGridState
+    }
+
     LaunchedEffect(pagerState.currentPage) {
         val newTab = Tab.entries[pagerState.currentPage]
         if (newTab != selectedTab) onTabSelected(newTab)
     }
 
-    Column(Modifier.fillMaxSize()) {
-        TabRow(selectedTabIndex = pagerState.currentPage) {
-            Tab.entries.forEachIndexed { index, tab ->
-                Tab(
-                    selected = pagerState.currentPage == index,
-                    onClick = { coroutineScope.launch { pagerState.animateScrollToPage(index) } },
-                    text = { Text(tab.displayName) }
-                )
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(Modifier.fillMaxSize()) {
+            TabRow(selectedTabIndex = pagerState.currentPage) {
+                Tab.entries.forEachIndexed { index, tab ->
+                    Tab(
+                        selected = pagerState.currentPage == index,
+                        onClick = { coroutineScope.launch { pagerState.animateScrollToPage(index) } },
+                        text = { Text(tab.displayName) }
+                    )
+                }
+            }
+
+            HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
+                when (Tab.entries[page]) {
+                    Tab.POPULAR -> MoviesPagingContent(
+                        movies = popularMovies,
+                        onMovieClick = onMovieClick,
+                        gridState = popularGridState
+                    )
+
+                    Tab.ALL -> MoviesPagingContent(
+                        movies = allMovies,
+                        onMovieClick = onMovieClick,
+                        gridState = allGridState
+                    )
+                }
             }
         }
+        ScrollToTopFab(
+            gridState = currentGridState,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp)
+        )
+    }
+}
 
-        HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
-            when (Tab.entries[page]) {
-                Tab.POPULAR -> MoviesPagingContent(
-                    movies = popularMovies,
-                    onMovieClick = onMovieClick,
-                    gridState = popularGridState
-                )
-                Tab.ALL -> MoviesPagingContent(
-                    movies = allMovies,
-                    onMovieClick = onMovieClick,
-                    gridState = allGridState
-                )
-            }
+@Composable
+private fun ScrollToTopFab(
+    gridState: LazyGridState,
+    modifier: Modifier = Modifier
+) {
+    val scope = rememberCoroutineScope()
+    val showScrollToTop by remember(gridState) {
+        derivedStateOf {
+            gridState.firstVisibleItemIndex > 0
+        }
+    }
+
+    AnimatedVisibility(
+        visible = showScrollToTop,
+        enter = fadeIn() + scaleIn(),
+        exit = fadeOut() + scaleOut(),
+        modifier = modifier
+    ) {
+        FloatingActionButton(
+            onClick = {
+                scope.launch {
+                    gridState.animateScrollToItem(0)
+                }
+            },
+            containerColor = MaterialTheme.colorScheme.primary
+        ) {
+            Icon(
+                imageVector = Icons.Default.KeyboardArrowUp,
+                contentDescription = null
+            )
         }
     }
 }
@@ -227,7 +285,7 @@ fun ShowContent(
 private fun MoviesPagingContent(
     movies: LazyPagingItems<MoviePreviewUiModel>,
     onMovieClick: (Int) -> Unit,
-    gridState: LazyGridState? = null
+    gridState: LazyGridState? = null,
 ) {
     val state = gridState ?: rememberLazyGridState()
     val refreshLoadState = movies.loadState.refresh
@@ -275,7 +333,8 @@ private fun MoviesPagingGrid(
     ) {
         items(
             count = movies.itemCount,
-            key = movies.itemKey { it.id }
+            key = movies.itemKey { it.id },
+            contentType = movies.itemContentType { "MovieItem" }
         ) { index ->
             movies[index]?.let { movie ->
                 MoviePreviewCard(movie = movie) {
