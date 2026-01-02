@@ -9,7 +9,7 @@ data class Movie(
     val rating: Rating,
     val year: Int,
     val country: List<Country>,
-    val genre: List<Genre>,
+    val genre: List<Genre>?,
     val description: String?,
     val shortDescription: String?,
     val poster: Poster?,

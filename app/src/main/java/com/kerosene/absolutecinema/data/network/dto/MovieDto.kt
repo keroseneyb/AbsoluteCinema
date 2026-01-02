@@ -8,7 +8,7 @@ data class MovieDto(
     @SerializedName("rating") val ratingDto: RatingDto,
     @SerializedName("year") val year: Int,
     @SerializedName("countries") val countriesDto: List<CountryDto>,
-    @SerializedName("genres") val genresDto: List<GenreDto>,
+    @SerializedName("genres") val genresDto: List<GenreDto>?,
     @SerializedName("poster") val posterDto: PosterDto?,
     @SerializedName("description") val description: String,
     @SerializedName("shortDescription") val shortDescription: String

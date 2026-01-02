@@ -208,7 +208,7 @@ private fun MovieInfoCard(
             Text(
                 text = stringResource(
                     R.string.genre,
-                    movie.details.genre.joinToString { it.name }),
+                    movie.details.genre?.joinToString { it.name } ?: "emptyList()"),
                 style = MaterialTheme.typography.bodyMedium
             )
             Text(

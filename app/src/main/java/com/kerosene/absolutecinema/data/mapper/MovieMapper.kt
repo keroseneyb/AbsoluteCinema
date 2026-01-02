@@ -23,7 +23,7 @@ fun MovieDto.toMovie(): Movie = Movie(
     rating = ratingDto.toRating(),
     year = year,
     country = countriesDto.map { it.toCountry() },
-    genre = genresDto.map { it.toGenre() },
+    genre = genresDto?.map { it.toGenre() },
     description = description,
     shortDescription = shortDescription,
     poster = posterDto?.toPoster()
@@ -58,7 +58,7 @@ fun Movie.toDbModel(): MovieDbModel = MovieDbModel(
     posterUrl = poster?.url,
     ratingKp = rating.kp,
     countries = country.map { it.name },
-    genres = genre.map { it.name }
+    genres = genre?.map { it.name } ?: emptyList()
 )
 
 fun MovieDbModel.toMovieEntity(): Movie = Movie(
