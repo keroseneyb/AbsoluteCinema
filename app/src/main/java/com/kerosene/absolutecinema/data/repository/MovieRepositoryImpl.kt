@@ -27,6 +27,7 @@ class MovieRepositoryImpl @Inject constructor(
         return Pager(
             config = PagingConfig(
                 pageSize = 20,
+                prefetchDistance = 5,
                 enablePlaceholders = false,
                 initialLoadSize = 20
             ),
@@ -42,6 +43,7 @@ class MovieRepositoryImpl @Inject constructor(
         return Pager(
             config = PagingConfig(
                 pageSize = 20,
+                prefetchDistance = 5,
                 enablePlaceholders = false,
                 initialLoadSize = 20
             ),
