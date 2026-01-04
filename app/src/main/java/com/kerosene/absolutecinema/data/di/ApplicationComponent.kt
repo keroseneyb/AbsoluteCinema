@@ -5,7 +5,7 @@ import com.kerosene.absolutecinema.presentation.di.ViewModelFactory
 import com.kerosene.absolutecinema.presentation.di.PresentationModule
 import dagger.BindsInstance
 import dagger.Component
-
+// asdadasd
 @ApplicationScope
 @Component(
     modules = [
