@@ -1,5 +1,7 @@
 package com.kerosene.absolutecinema.presentation.utils
 
+import kotlin.coroutines.cancellation.CancellationException
+
 object Constants {
     const val UNKNOWN_ERROR = "Unknown error"
 }
@@ -15,6 +17,9 @@ suspend inline fun <T> handleApiCall(
         apiCall()
     }.fold(
         onSuccess = { onSuccess(it) },
-        onFailure = { e -> onError(e.message ?: Constants.UNKNOWN_ERROR) }
+        onFailure = { e ->
+            if (e is CancellationException) throw e
+            onError(e.message ?: Constants.UNKNOWN_ERROR)
+        }
     )
 }
