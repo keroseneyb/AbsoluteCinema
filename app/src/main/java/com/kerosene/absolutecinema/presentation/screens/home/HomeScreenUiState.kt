@@ -1,9 +1,9 @@
 package com.kerosene.absolutecinema.presentation.screens.home
 
-sealed class HomeScreenUiState {
-    object Loading : HomeScreenUiState()
-    data class Error(val message: String) : HomeScreenUiState()
-    data class Success(val selectedTab: Tab) : HomeScreenUiState()
+sealed interface HomeScreenUiState {
+    object Loading : HomeScreenUiState
+    data class Error(val message: String) : HomeScreenUiState
+    data class Success(val selectedTab: Tab) : HomeScreenUiState
 }
 
 enum class Tab {
