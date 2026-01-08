@@ -17,9 +17,10 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.update
 import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration.Companion.milliseconds
@@ -37,43 +38,40 @@ class SearchViewModel @Inject constructor(
 
     init {
         _query.debounce(500.milliseconds)
+            .map { it.trim() }
             .distinctUntilChanged()
             .filter { query ->
-                query.trim().isEmpty() || query.trim().length >= 3
+                query.length >= 3
             }
             .flatMapLatest { currentQuery ->
-                if (currentQuery.trim().isEmpty()) {
-                    flowOf(SearchUiState.Initial)
-                } else {
-                    searchMovies(currentQuery)
-                }
+                _uiState.update { SearchUiState.Loading }
+                searchMovies(currentQuery)
             }
             .onEach { state ->
-                _uiState.value = state
+                _uiState.update { state }
             }
             .launchIn(viewModelScope)
     }
 
     fun onQueryChange(newQuery: String) {
-        _query.value = newQuery
+        _query.update { newQuery }
 
         if (newQuery.trim().isEmpty()) {
-            _uiState.value = SearchUiState.Initial
+            _uiState.update { SearchUiState.Initial }
         }
     }
 
-    private fun searchMovies(query: String) : Flow<SearchUiState> = flow {
-        emit(SearchUiState.Loading)
+    private fun searchMovies(query: String): Flow<SearchUiState> = flow {
         runCatching {
             searchMovieUseCase(query)
         }.fold(
             onSuccess = { movies ->
                 val validMovies = filterValidMovies(movies.toSearchUiModels())
                 emit(if (validMovies.isEmpty()) {
-                    SearchUiState.Empty
-                } else {
-                    SearchUiState.Success(validMovies)
-                })
+                        SearchUiState.Empty
+                    } else {
+                        SearchUiState.Success(validMovies)
+                    })
             },
             onFailure = { e ->
                 if (e is CancellationException) throw e
