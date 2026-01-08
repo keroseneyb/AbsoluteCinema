@@ -14,6 +14,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import javax.inject.Inject
@@ -55,11 +56,11 @@ class MovieDetailsViewModel @Inject constructor(
                 }
             },
             onSuccess = { uiModel ->
-                _uiState.value = MovieDetailsUiState.Success(uiModel)
+                _uiState.update { MovieDetailsUiState.Success(uiModel) }
                 observeFavourite(uiModel.details.id)
             },
             onError = { message ->
-                _uiState.value = MovieDetailsUiState.Error(message)
+                _uiState.update { MovieDetailsUiState.Error(message) }
             }
         )
     }
@@ -67,7 +68,7 @@ class MovieDetailsViewModel @Inject constructor(
     fun observeFavourite(movieId: Int) {
         viewModelScope.launch {
             observeFavouriteStateUseCase(movieId).collect {
-                _isFavourite.value = it
+                _isFavourite.update { it }
             }
         }
     }
