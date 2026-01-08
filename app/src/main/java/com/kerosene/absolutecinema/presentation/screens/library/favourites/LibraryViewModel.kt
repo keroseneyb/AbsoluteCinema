@@ -9,14 +9,16 @@ import com.kerosene.absolutecinema.domain.usecase.GetMovieNotesUseCase
 import com.kerosene.absolutecinema.domain.usecase.ToggleFavouriteStatusUseCase
 import com.kerosene.absolutecinema.presentation.screens.library.favourites.mapping.toMoviesLibraryUiModels
 import com.kerosene.absolutecinema.presentation.utils.Constants
-import com.kerosene.absolutecinema.presentation.utils.handleApiCall
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -51,40 +53,21 @@ class LibraryViewModel @Inject constructor(
     }
 
     private fun loadLibraryData() {
-        viewModelScope.launch {
-            handleApiCall(
-                apiCall = {
-                    libraryDataFlow().first()
-                },
-                onLoading = {
-                    _uiState.value = LibraryScreenUiState.Loading
-                },
-                onSuccess = { successState ->
-                    _uiState.value = successState
-                    observeLibraryUpdates()
-                },
-                onError = { message ->
-                    _uiState.value = LibraryScreenUiState.Error(message)
+        libraryDataFlow()
+            .onStart { _uiState.update { LibraryScreenUiState.Loading } }
+            .onEach { successState ->
+                _uiState.update { successState }
+            }
+            .catch { e ->
+                _uiState.update {
+                    LibraryScreenUiState.Error(e.message ?: Constants.UNKNOWN_ERROR)
                 }
-            )
-        }
-    }
-
-    private fun observeLibraryUpdates() {
-        viewModelScope.launch {
-            libraryDataFlow()
-                .catch { e ->
-                    _uiState.value =
-                        LibraryScreenUiState.Error(e.message ?: Constants.UNKNOWN_ERROR)
-                }
-                .collect { newState ->
-                    _uiState.value = newState
-                }
-        }
+            }
+            .launchIn(viewModelScope)
     }
 
     fun onTabSelected(tab: LibraryTab) {
-        _selectedTab.value = tab
+        _selectedTab.update { tab }
     }
 
     fun toggleFavourite(movieId: Int, title: String) {

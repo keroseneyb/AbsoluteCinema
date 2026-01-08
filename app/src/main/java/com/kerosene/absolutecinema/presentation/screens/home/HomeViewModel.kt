@@ -43,7 +43,7 @@ class HomeViewModel @Inject constructor(
             }
 
     init {
-        _uiState.value = HomeScreenUiState.Success(Tab.POPULAR)
+        _uiState.update { HomeScreenUiState.Success(Tab.POPULAR) }
     }
 
     fun onTabSelected(tab: Tab) {

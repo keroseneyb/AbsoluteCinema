@@ -21,7 +21,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -94,7 +93,6 @@ fun SearchScreen(
             SearchTextField(
                 query = query,
                 onQueryChange = { viewModel.onQueryChange(it) },
-                onSearch = { viewModel.searchMovies() },
                 focusRequester = focusRequester,
                 modifier = Modifier.weight(1f),
                 keyboardController = keyboardController,
@@ -118,7 +116,6 @@ fun SearchScreen(
 private fun SearchTextField(
     query: String,
     onQueryChange: (String) -> Unit,
-    onSearch: () -> Unit,
     focusRequester: FocusRequester,
     modifier: Modifier = Modifier,
     keyboardController: SoftwareKeyboardController? = null,
@@ -129,11 +126,6 @@ private fun SearchTextField(
         onValueChange = onQueryChange,
         modifier = modifier.focusRequester(focusRequester),
         placeholder = { Text(stringResource(R.string.search_movies)) },
-        leadingIcon = {
-            IconButton(onClick = onSearch) {
-                Icon(Icons.Default.Search, contentDescription = null)
-            }
-        },
         trailingIcon = {
             if (query.isNotEmpty()) {
                 IconButton(onClick = { onQueryChange("") }) {
@@ -143,10 +135,9 @@ private fun SearchTextField(
         },
         singleLine = true,
         shape = RoundedCornerShape(28.dp),
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
         keyboardActions = KeyboardActions(
             onSearch = {
-                onSearch()
                 keyboardController?.hide()
                 focusManager.clearFocus()
             }
