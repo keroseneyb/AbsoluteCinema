@@ -33,15 +33,16 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -55,48 +56,21 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
-import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.bumptech.glide.integration.compose.placeholder
 import com.kerosene.absolutecinema.R
-import com.kerosene.absolutecinema.getApplicationComponent
 import com.kerosene.absolutecinema.presentation.screens.home.model.MoviePreviewUiModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-@Composable
-fun HomeScreen(
-    onSearchClick: () -> Unit,
-    onMovieClick: (Int) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val component = getApplicationComponent()
-    val viewModel: HomeViewModel = viewModel(factory = component.getViewModelFactory())
-    val uiState by viewModel.uiState.collectAsState()
-
-    val popularMovies = viewModel.popularMoviesFlow.collectAsLazyPagingItems()
-    val allMovies = viewModel.allMoviesFlow.collectAsLazyPagingItems()
-
-    HomeScreenContent(
-        uiState = uiState,
-        popularMovies = popularMovies,
-        allMovies = allMovies,
-        onSearchClick = onSearchClick,
-        onTabSelected = viewModel::onTabSelected,
-        onMovieClick = onMovieClick,
-        modifier = modifier
-    )
-}
-
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun HomeScreenContent(
+fun HomeScreen(
     uiState: HomeScreenUiState,
     popularMovies: LazyPagingItems<MoviePreviewUiModel>,
     allMovies: LazyPagingItems<MoviePreviewUiModel>,
@@ -117,12 +91,25 @@ private fun HomeScreenContent(
             is HomeScreenUiState.Loading -> LoadingState()
             is HomeScreenUiState.Error -> ErrorState(uiState.message)
             is HomeScreenUiState.Success -> {
+                val currentIsRefreshing = when (uiState.selectedTab) {
+                    Tab.POPULAR -> popularMovies.loadState.refresh is LoadState.Loading
+                    Tab.ALL -> allMovies.loadState.refresh is LoadState.Loading
+                }
+
+                val currentOnRefresh: () -> Unit = {
+                    when (uiState.selectedTab) {
+                        Tab.POPULAR -> popularMovies.refresh()
+                        Tab.ALL -> allMovies.refresh()
+                    }
+                }
+
                 LaunchedEffect(uiState.selectedTab) {
                     val page = uiState.selectedTab.ordinal
                     if (pagerState.currentPage != page) {
                         pagerState.scrollToPage(page)
                     }
                 }
+
                 ShowContent(
                     pagerState = pagerState,
                     selectedTab = uiState.selectedTab,
@@ -130,7 +117,9 @@ private fun HomeScreenContent(
                     onMovieClick = onMovieClick,
                     coroutineScope = coroutineScope,
                     popularMovies = popularMovies,
-                    allMovies = allMovies
+                    allMovies = allMovies,
+                    isRefreshing = currentIsRefreshing,
+                    onRefresh = currentOnRefresh
                 )
             }
         }
@@ -196,6 +185,8 @@ fun ShowContent(
     coroutineScope: CoroutineScope,
     popularMovies: LazyPagingItems<MoviePreviewUiModel>,
     allMovies: LazyPagingItems<MoviePreviewUiModel>,
+    isRefreshing: Boolean,
+    onRefresh: () -> Unit,
 ) {
     val popularGridState = rememberLazyGridState()
     val allGridState = rememberLazyGridState()
@@ -227,13 +218,17 @@ fun ShowContent(
                     Tab.POPULAR -> MoviesPagingContent(
                         movies = popularMovies,
                         onMovieClick = onMovieClick,
-                        gridState = popularGridState
+                        gridState = popularGridState,
+                        isRefreshing = isRefreshing,
+                        onRefresh = onRefresh
                     )
 
                     Tab.ALL -> MoviesPagingContent(
                         movies = allMovies,
                         onMovieClick = onMovieClick,
-                        gridState = allGridState
+                        gridState = allGridState,
+                        isRefreshing = isRefreshing,
+                        onRefresh = onRefresh
                     )
                 }
             }
@@ -250,7 +245,7 @@ fun ShowContent(
 @Composable
 private fun ScrollToTopFab(
     gridState: LazyGridState,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
     val showScrollToTop by remember(gridState) {
@@ -286,13 +281,30 @@ private fun MoviesPagingContent(
     movies: LazyPagingItems<MoviePreviewUiModel>,
     onMovieClick: (Int) -> Unit,
     gridState: LazyGridState? = null,
+    isRefreshing: Boolean,
+    onRefresh: () -> Unit,
 ) {
     val state = gridState ?: rememberLazyGridState()
     val refreshLoadState = movies.loadState.refresh
 
+    val isInitialLoad = movies.itemCount == 0 && refreshLoadState is LoadState.Loading
+
     when (refreshLoadState) {
-        is LoadState.Loading -> LoadingState()
         is LoadState.Error -> ErrorState(refreshLoadState.error.localizedMessage ?: "Unknown error")
+        is LoadState.Loading -> {
+            if (isInitialLoad) {
+                LoadingState()
+            } else {
+                MoviesPagingGrid(
+                    movies = movies,
+                    onMovieClick = onMovieClick,
+                    gridState = state,
+                    isRefreshing = isRefreshing,
+                    onRefresh = onRefresh
+                )
+            }
+        }
+
         is LoadState.NotLoading -> {
             if (movies.itemCount == 0) {
                 EmptyMoviesList()
@@ -300,7 +312,9 @@ private fun MoviesPagingContent(
                 MoviesPagingGrid(
                     movies = movies,
                     onMovieClick = onMovieClick,
-                    gridState = state
+                    gridState = state,
+                    isRefreshing = isRefreshing,
+                    onRefresh = onRefresh
                 )
             }
         }
@@ -317,28 +331,36 @@ private fun EmptyMoviesList() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun MoviesPagingGrid(
     movies: LazyPagingItems<MoviePreviewUiModel>,
     onMovieClick: (Int) -> Unit,
     gridState: LazyGridState,
+    isRefreshing: Boolean,
+    onRefresh: () -> Unit,
 ) {
-    LazyVerticalGrid(
-        state = gridState,
-        columns = GridCells.Fixed(2),
-        contentPadding = PaddingValues(4.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.fillMaxSize()
+    PullToRefreshBox(
+        isRefreshing = isRefreshing,
+        onRefresh = onRefresh,
     ) {
-        items(
-            count = movies.itemCount,
-            key = movies.itemKey { it.id },
-            contentType = movies.itemContentType { "MovieItem" }
-        ) { index ->
-            movies[index]?.let { movie ->
-                MoviePreviewCard(movie = movie) {
-                    onMovieClick(movie.id)
+        LazyVerticalGrid(
+            state = gridState,
+            columns = GridCells.Fixed(2),
+            contentPadding = PaddingValues(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxSize()
+        ) {
+            items(
+                count = movies.itemCount,
+                key = movies.itemKey { it.id },
+                contentType = movies.itemContentType { "MovieItem" }
+            ) { index ->
+                movies[index]?.let { movie ->
+                    MoviePreviewCard(movie = movie) {
+                        onMovieClick(movie.id)
+                    }
                 }
             }
         }

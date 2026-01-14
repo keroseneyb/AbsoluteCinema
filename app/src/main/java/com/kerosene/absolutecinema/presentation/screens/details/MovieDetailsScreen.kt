@@ -29,8 +29,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,39 +38,34 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.kerosene.absolutecinema.R
 import com.kerosene.absolutecinema.domain.entity.Review
 import com.kerosene.absolutecinema.domain.entity.ReviewType
 import com.kerosene.absolutecinema.domain.entity.Trailer
-import com.kerosene.absolutecinema.getApplicationComponent
 import com.kerosene.absolutecinema.presentation.screens.details.model.MovieDetailsUiModel
 
 @OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 fun MovieDetailsScreen(
     movieId: Int,
+    uiState: MovieDetailsUiState,
+    isFavourite: Boolean,
+    loadMovie: (Int) -> Unit,
+    onToggleFavourite: (Int, String) -> Unit,
+    onTrailerClick: (String) -> Unit
 ) {
-    val component = getApplicationComponent()
-    val viewModel: MovieDetailsViewModel = viewModel(factory = component.getViewModelFactory())
-    val uiState by viewModel.uiState.collectAsState()
-    val isFavourite by viewModel.isFavourite.collectAsState()
 
-    LaunchedEffect(movieId) { viewModel.loadMovie(movieId) }
+    LaunchedEffect(movieId) { loadMovie(movieId) }
 
     when (val state = uiState) {
         is MovieDetailsUiState.Loading -> ShowLoading()
         is MovieDetailsUiState.Error -> ShowError(state.message)
         is MovieDetailsUiState.Success -> ShowMovieDetails(
             isFavourite = isFavourite,
-            onToggleFavourite = { movieId, title ->
-                viewModel.toggleFavourite(movieId = movieId, title = title)
-            },
-            onTrailerClick = {
-                viewModel.openTrailer(it)
-            },
+            onToggleFavourite = onToggleFavourite,
+            onTrailerClick = onTrailerClick,
             movie = state.movieDetails
         )
     }
