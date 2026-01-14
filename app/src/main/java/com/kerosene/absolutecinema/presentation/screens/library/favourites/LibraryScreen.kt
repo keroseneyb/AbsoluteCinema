@@ -31,7 +31,6 @@ import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,39 +40,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.kerosene.absolutecinema.R
 import com.kerosene.absolutecinema.domain.entity.Note
-import com.kerosene.absolutecinema.getApplicationComponent
 import com.kerosene.absolutecinema.presentation.screens.library.favourites.model.MovieLibraryUiModel
 import kotlinx.coroutines.launch
 
 @Composable
 fun LibraryScreen(
-    onMovieClick: (Int) -> Unit,
-    onNoteClick: (Int) -> Unit,
-) {
-    val component = getApplicationComponent()
-    val viewModel: LibraryViewModel = viewModel(factory = component.getViewModelFactory())
-
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val selectedTab by viewModel.selectedTab.collectAsStateWithLifecycle()
-
-    LibraryScreenContent(
-        uiState = uiState,
-        selectedTab = selectedTab,
-        onTabSelected = viewModel::onTabSelected,
-        onMovieClick = onMovieClick,
-        onNoteClick = onNoteClick,
-        onToggleFavourite = { movieId, title -> viewModel.toggleFavourite(movieId, title) }
-    )
-}
-
-@Composable
-private fun LibraryScreenContent(
     uiState: LibraryScreenUiState,
     selectedTab: LibraryTab,
     onTabSelected: (LibraryTab) -> Unit,
