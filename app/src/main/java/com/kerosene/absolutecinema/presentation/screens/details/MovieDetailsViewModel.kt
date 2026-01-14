@@ -35,6 +35,7 @@ class MovieDetailsViewModel @Inject constructor(
     val isFavourite: StateFlow<Boolean> = _isFavourite.asStateFlow()
 
     fun loadMovie(movieId: Int) {
+        observeFavourite(movieId)
         viewModelScope.launch {
             preLoadMovie(movieId)
         }
@@ -57,7 +58,6 @@ class MovieDetailsViewModel @Inject constructor(
             },
             onSuccess = { uiModel ->
                 _uiState.update { MovieDetailsUiState.Success(uiModel) }
-                observeFavourite(uiModel.details.id)
             },
             onError = { message ->
                 _uiState.update { MovieDetailsUiState.Error(message) }
@@ -68,7 +68,7 @@ class MovieDetailsViewModel @Inject constructor(
     fun observeFavourite(movieId: Int) {
         viewModelScope.launch {
             observeFavouriteStateUseCase(movieId).collect {
-                _isFavourite.update { it }
+                _isFavourite.value = it
             }
         }
     }
