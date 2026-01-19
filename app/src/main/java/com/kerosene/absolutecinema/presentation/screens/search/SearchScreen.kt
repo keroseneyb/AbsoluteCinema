@@ -32,6 +32,9 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,6 +43,8 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -54,20 +59,45 @@ import com.kerosene.absolutecinema.presentation.screens.search.model.MovieSearch
 
 @Composable
 fun SearchScreen(
+    viewModel: SearchViewModel,
     onBackClick: () -> Unit,
     onMovieClick: (Int) -> Unit,
-    uiState: SearchUiState,
-    query: String,
-    focusRequester: FocusRequester,
-    keyboardController: SoftwareKeyboardController?,
-    focusManager: FocusManager,
     onQueryChange: (String) -> Unit
 ) {
+    val uiState by viewModel.uiState.collectAsState()
+    val query by viewModel.query.collectAsState()
+    val focusRequester = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
         keyboardController?.show()
     }
 
+    SearchScreenContent(
+        uiState = uiState,
+        query = query,
+        focusRequester = focusRequester,
+        focusManager = focusManager,
+        keyboardController = keyboardController,
+        onBackClick = onBackClick,
+        onMovieClick = onMovieClick,
+        onQueryChange = onQueryChange
+    )
+}
+
+@Composable
+private fun SearchScreenContent(
+    uiState: SearchUiState,
+    query: String,
+    focusRequester: FocusRequester,
+    focusManager: FocusManager,
+    keyboardController: SoftwareKeyboardController?,
+    onBackClick: () -> Unit,
+    onMovieClick: (Int) -> Unit,
+    onQueryChange: (String) -> Unit
+) {
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
             modifier = Modifier

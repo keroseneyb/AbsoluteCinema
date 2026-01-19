@@ -29,6 +29,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,9 +48,33 @@ import com.kerosene.absolutecinema.domain.entity.ReviewType
 import com.kerosene.absolutecinema.domain.entity.Trailer
 import com.kerosene.absolutecinema.presentation.screens.details.model.MovieDetailsUiModel
 
-@OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 fun MovieDetailsScreen(
+    viewModel: MovieDetailsViewModel,
+    movieId: Int
+) {
+    val uiState by viewModel.uiState.collectAsState()
+    val isFavourite by viewModel.isFavourite.collectAsState()
+
+    MovieDetailsScreenContent(
+        movieId = movieId,
+        uiState = uiState,
+        isFavourite = isFavourite,
+        loadMovie = { movieId ->
+            viewModel.loadMovie(movieId)
+        },
+        onToggleFavourite = { movieId, title ->
+            viewModel.toggleFavourite(movieId, title)
+        },
+        onTrailerClick = { url ->
+            viewModel.openTrailer(url)
+        }
+    )
+}
+
+@OptIn(ExperimentalGlideComposeApi::class)
+@Composable
+private fun MovieDetailsScreenContent(
     movieId: Int,
     uiState: MovieDetailsUiState,
     isFavourite: Boolean,
@@ -56,7 +82,6 @@ fun MovieDetailsScreen(
     onToggleFavourite: (Int, String) -> Unit,
     onTrailerClick: (String) -> Unit
 ) {
-
     LaunchedEffect(movieId) { loadMovie(movieId) }
 
     when (val state = uiState) {

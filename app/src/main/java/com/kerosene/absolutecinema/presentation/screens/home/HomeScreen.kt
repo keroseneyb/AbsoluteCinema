@@ -43,6 +43,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -58,6 +59,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.paging.LoadState
 import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.collectAsLazyPagingItems
 import androidx.paging.compose.itemContentType
 import androidx.paging.compose.itemKey
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
@@ -68,22 +70,46 @@ import com.kerosene.absolutecinema.presentation.screens.home.model.MoviePreviewU
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun HomeScreen(
-    uiState: HomeScreenUiState,
-    popularMovies: LazyPagingItems<MoviePreviewUiModel>,
-    allMovies: LazyPagingItems<MoviePreviewUiModel>,
+    viewModel: HomeViewModel,
     onSearchClick: () -> Unit,
-    onTabSelected: (Tab) -> Unit,
-    onMovieClick: (Int) -> Unit,
-    modifier: Modifier = Modifier,
+    onMovieClick: (Int) -> Unit
 ) {
+    val uiState by viewModel.uiState.collectAsState()
+
+    val popularMovies = viewModel.popularMoviesFlow.collectAsLazyPagingItems()
+    val allMovies = viewModel.allMoviesFlow.collectAsLazyPagingItems()
     val coroutineScope = rememberCoroutineScope()
     val pagerState = rememberPagerState(
         pageCount = { Tab.entries.size }
     )
 
+    HomeScreenContent(
+        onSearchClick = onSearchClick,
+        onTabSelected = { tab ->  viewModel.onTabSelected(tab) },
+        uiState = uiState,
+        popularMovies = popularMovies,
+        allMovies = allMovies,
+        coroutineScope = coroutineScope,
+        pagerState = pagerState,
+        onMovieClick = onMovieClick
+    )
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun HomeScreenContent(
+    uiState: HomeScreenUiState,
+    popularMovies: LazyPagingItems<MoviePreviewUiModel>,
+    allMovies: LazyPagingItems<MoviePreviewUiModel>,
+    coroutineScope: CoroutineScope,
+    pagerState: PagerState,
+    onSearchClick: () -> Unit,
+    onTabSelected: (Tab) -> Unit,
+    onMovieClick: (Int) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Column(modifier = modifier.fillMaxSize()) {
         SearchButton(onClick = onSearchClick)
 
@@ -371,14 +397,14 @@ private fun MoviesPagingGrid(
 @Composable
 private fun MoviePreviewCard(
     movie: MoviePreviewUiModel,
-    onClick: (Int) -> Unit,
+    onMovieClick: (Int) -> Unit,
 ) {
     Box(
         modifier = Modifier
             .width(160.dp)
             .height(320.dp)
             .clip(RoundedCornerShape(8.dp))
-            .clickable(onClick = { onClick(movie.id) })
+            .clickable(onClick = { onMovieClick(movie.id) })
     ) {
         GlideImage(
             model = movie.poster,
