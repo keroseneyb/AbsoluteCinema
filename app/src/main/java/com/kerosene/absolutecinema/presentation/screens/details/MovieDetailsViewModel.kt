@@ -67,8 +67,8 @@ class MovieDetailsViewModel @Inject constructor(
 
     fun observeFavourite(movieId: Int) {
         viewModelScope.launch {
-            observeFavouriteStateUseCase(movieId).collect {
-                _isFavourite.value = it
+            observeFavouriteStateUseCase(movieId).collect { isFavourite ->
+                _isFavourite.update { isFavourite }
             }
         }
     }
