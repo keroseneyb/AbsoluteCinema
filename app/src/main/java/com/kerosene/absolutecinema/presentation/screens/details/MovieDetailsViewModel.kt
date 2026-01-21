@@ -10,32 +10,50 @@ import com.kerosene.absolutecinema.domain.usecase.ToggleFavouriteStatusUseCase
 import com.kerosene.absolutecinema.presentation.screens.details.model.MovieDetailsUiModel
 import com.kerosene.absolutecinema.presentation.screens.details.utils.OpenTrailerHelper
 import com.kerosene.absolutecinema.presentation.utils.handleApiCall
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import javax.inject.Inject
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class MovieDetailsViewModel @Inject constructor(
+    private val observeFavouriteStateUseCase: ObserveFavouriteStateUseCase,
     private val getMovieDetailsUseCase: GetMovieDetailsUseCase,
     private val getTrailersUseCase: GetTrailersUseCase,
     private val getReviewsUseCase: GetReviewsUseCase,
     private val toggleFavouriteStatusUseCase: ToggleFavouriteStatusUseCase,
-    private val observeFavouriteStateUseCase: ObserveFavouriteStateUseCase,
     private val openTrailerHelper: OpenTrailerHelper,
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow<MovieDetailsUiState>(MovieDetailsUiState.Loading)
-    val uiState: StateFlow<MovieDetailsUiState> = _uiState.asStateFlow()
+    private val currentMovieId = MutableStateFlow<Int?>(null)
+    private val movieDetailsUiState = MutableStateFlow<MovieDetailsUiState>(MovieDetailsUiState.Loading)
 
-    private val _isFavourite = MutableStateFlow(false)
-    val isFavourite: StateFlow<Boolean> = _isFavourite.asStateFlow()
+    val state: StateFlow<MovieDetailsUiState> = combine(
+        movieDetailsUiState,
+        currentMovieId.filterNotNull().flatMapLatest { observeFavouriteStateUseCase(it) },
+    ) { movieDetailsUiState, isFavourite ->
+        when (movieDetailsUiState) {
+            is MovieDetailsUiState.Loading -> movieDetailsUiState
+            is MovieDetailsUiState.Error -> movieDetailsUiState
+            is MovieDetailsUiState.Success -> movieDetailsUiState.copy(isFavourite = isFavourite)
+        }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = MovieDetailsUiState.Loading
+    )
 
     fun loadMovie(movieId: Int) {
-        observeFavourite(movieId)
+        currentMovieId.update { movieId }
         viewModelScope.launch {
             preLoadMovie(movieId)
         }
@@ -57,20 +75,12 @@ class MovieDetailsViewModel @Inject constructor(
                 }
             },
             onSuccess = { uiModel ->
-                _uiState.update { MovieDetailsUiState.Success(uiModel) }
+                movieDetailsUiState.update { MovieDetailsUiState.Success(uiModel) }
             },
             onError = { message ->
-                _uiState.update { MovieDetailsUiState.Error(message) }
+                movieDetailsUiState.update { MovieDetailsUiState.Error(message) }
             }
         )
-    }
-
-    fun observeFavourite(movieId: Int) {
-        viewModelScope.launch {
-            observeFavouriteStateUseCase(movieId).collect { isFavourite ->
-                _isFavourite.update { isFavourite }
-            }
-        }
     }
 
     fun toggleFavourite(movieId: Int, title: String) {

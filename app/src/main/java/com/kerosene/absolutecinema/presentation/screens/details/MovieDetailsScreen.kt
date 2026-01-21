@@ -53,13 +53,11 @@ fun MovieDetailsScreen(
     viewModel: MovieDetailsViewModel,
     movieId: Int
 ) {
-    val uiState by viewModel.uiState.collectAsState()
-    val isFavourite by viewModel.isFavourite.collectAsState()
+    val uiState by viewModel.state.collectAsState()
 
     MovieDetailsScreenContent(
         movieId = movieId,
         uiState = uiState,
-        isFavourite = isFavourite,
         loadMovie = { movieId ->
             viewModel.loadMovie(movieId)
         },
@@ -77,21 +75,20 @@ fun MovieDetailsScreen(
 private fun MovieDetailsScreenContent(
     movieId: Int,
     uiState: MovieDetailsUiState,
-    isFavourite: Boolean,
     loadMovie: (Int) -> Unit,
     onToggleFavourite: (Int, String) -> Unit,
     onTrailerClick: (String) -> Unit
 ) {
     LaunchedEffect(movieId) { loadMovie(movieId) }
 
-    when (val state = uiState) {
+    when (uiState) {
         is MovieDetailsUiState.Loading -> ShowLoading()
-        is MovieDetailsUiState.Error -> ShowError(state.message)
+        is MovieDetailsUiState.Error -> ShowError(uiState.message)
         is MovieDetailsUiState.Success -> ShowMovieDetails(
-            isFavourite = isFavourite,
+            isFavourite = uiState.isFavourite,
             onToggleFavourite = onToggleFavourite,
             onTrailerClick = onTrailerClick,
-            movie = state.movieDetails
+            movie = uiState.movieDetails
         )
     }
 }
