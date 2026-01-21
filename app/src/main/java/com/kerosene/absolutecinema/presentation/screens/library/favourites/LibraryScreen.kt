@@ -41,6 +41,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
@@ -51,7 +52,7 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun LibraryScreen(
-    viewModel: LibraryViewModel,
+    viewModel: LibraryViewModel = hiltViewModel(),
     onMovieClick: (Int) -> Unit,
     onNoteClick: (Int) -> Unit,
 ) {
