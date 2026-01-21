@@ -10,6 +10,7 @@ import com.kerosene.absolutecinema.domain.usecase.ToggleFavouriteStatusUseCase
 import com.kerosene.absolutecinema.presentation.screens.details.model.MovieDetailsUiModel
 import com.kerosene.absolutecinema.presentation.screens.details.utils.OpenTrailerHelper
 import com.kerosene.absolutecinema.presentation.utils.handleApiCall
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,6 +26,7 @@ import kotlinx.coroutines.supervisorScope
 import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
+@HiltViewModel
 class MovieDetailsViewModel @Inject constructor(
     private val observeFavouriteStateUseCase: ObserveFavouriteStateUseCase,
     private val getMovieDetailsUseCase: GetMovieDetailsUseCase,
