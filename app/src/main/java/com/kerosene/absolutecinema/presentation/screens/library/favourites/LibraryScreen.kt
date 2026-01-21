@@ -42,33 +42,33 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.kerosene.absolutecinema.R
 import com.kerosene.absolutecinema.domain.entity.Note
-import com.kerosene.absolutecinema.getApplicationComponent
 import com.kerosene.absolutecinema.presentation.screens.library.favourites.model.MovieLibraryUiModel
 import kotlinx.coroutines.launch
 
 @Composable
 fun LibraryScreen(
+    viewModel: LibraryViewModel,
     onMovieClick: (Int) -> Unit,
     onNoteClick: (Int) -> Unit,
 ) {
-    val component = getApplicationComponent()
-    val viewModel: LibraryViewModel = viewModel(factory = component.getViewModelFactory())
-
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val selectedTab by viewModel.selectedTab.collectAsStateWithLifecycle()
 
     LibraryScreenContent(
         uiState = uiState,
         selectedTab = selectedTab,
-        onTabSelected = viewModel::onTabSelected,
         onMovieClick = onMovieClick,
         onNoteClick = onNoteClick,
-        onToggleFavourite = { movieId, title -> viewModel.toggleFavourite(movieId, title) }
+        onTabSelected = { tab ->
+            viewModel.onTabSelected(tab)
+        },
+        onToggleFavourite = { movieId, title ->
+            viewModel.toggleFavourite(movieId, title)
+        },
     )
 }
 
@@ -76,9 +76,9 @@ fun LibraryScreen(
 private fun LibraryScreenContent(
     uiState: LibraryScreenUiState,
     selectedTab: LibraryTab,
-    onTabSelected: (LibraryTab) -> Unit,
     onMovieClick: (Int) -> Unit,
     onNoteClick: (Int) -> Unit,
+    onTabSelected: (LibraryTab) -> Unit,
     onToggleFavourite: (Int, String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -88,9 +88,9 @@ private fun LibraryScreenContent(
         is LibraryScreenUiState.Success -> SuccessContent(
             uiState = uiState,
             selectedTab = selectedTab,
-            onTabSelected = onTabSelected,
             onMovieClick = onMovieClick,
             onNoteClick = onNoteClick,
+            onTabSelected = onTabSelected,
             onToggleFavourite = onToggleFavourite,
             modifier = modifier
         )
@@ -102,9 +102,9 @@ private fun LibraryScreenContent(
 private fun SuccessContent(
     uiState: LibraryScreenUiState.Success,
     selectedTab: LibraryTab,
-    onTabSelected: (LibraryTab) -> Unit,
     onMovieClick: (Int) -> Unit,
     onNoteClick: (Int) -> Unit,
+    onTabSelected: (LibraryTab) -> Unit,
     onToggleFavourite: (Int, String) -> Unit,
     modifier: Modifier = Modifier,
 ) {

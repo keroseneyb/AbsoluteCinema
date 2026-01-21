@@ -24,18 +24,15 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kerosene.absolutecinema.R
-import com.kerosene.absolutecinema.getApplicationComponent
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditNoteScreen(
+    viewModel: NoteViewModel,
     movieId: Int,
     onBack: () -> Unit,
 ) {
-    val component = getApplicationComponent()
-    val viewModel: NoteViewModel = viewModel(factory = component.getViewModelFactory())
     val note by viewModel.note.collectAsStateWithLifecycle()
     val text by viewModel.text.collectAsStateWithLifecycle()
 

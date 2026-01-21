@@ -52,32 +52,52 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.kerosene.absolutecinema.R
-import com.kerosene.absolutecinema.getApplicationComponent
 import com.kerosene.absolutecinema.presentation.screens.search.model.MovieSearchUiModel
 
 @Composable
 fun SearchScreen(
+    viewModel: SearchViewModel,
     onBackClick: () -> Unit,
     onMovieClick: (Int) -> Unit,
+    onQueryChange: (String) -> Unit
 ) {
-    val component = getApplicationComponent()
-    val viewModel: SearchViewModel = viewModel(factory = component.getViewModelFactory())
-
     val uiState by viewModel.uiState.collectAsState()
     val query by viewModel.query.collectAsState()
     val focusRequester = remember { FocusRequester() }
-    val keyboardController = LocalSoftwareKeyboardController.current
     val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
         keyboardController?.show()
     }
 
+    SearchScreenContent(
+        uiState = uiState,
+        query = query,
+        focusRequester = focusRequester,
+        focusManager = focusManager,
+        keyboardController = keyboardController,
+        onBackClick = onBackClick,
+        onMovieClick = onMovieClick,
+        onQueryChange = onQueryChange
+    )
+}
+
+@Composable
+private fun SearchScreenContent(
+    uiState: SearchUiState,
+    query: String,
+    focusRequester: FocusRequester,
+    focusManager: FocusManager,
+    keyboardController: SoftwareKeyboardController?,
+    onBackClick: () -> Unit,
+    onMovieClick: (Int) -> Unit,
+    onQueryChange: (String) -> Unit
+) {
     Column(modifier = Modifier.fillMaxSize()) {
         Row(
             modifier = Modifier
@@ -92,21 +112,21 @@ fun SearchScreen(
 
             SearchTextField(
                 query = query,
-                onQueryChange = { viewModel.onQueryChange(it) },
+                onQueryChange = onQueryChange,
                 focusRequester = focusRequester,
                 modifier = Modifier.weight(1f),
                 keyboardController = keyboardController,
                 focusManager = focusManager
             )
         }
-        when (val state = uiState) {
+        when (uiState) {
             is SearchUiState.Initial -> EmptySearchState()
             is SearchUiState.Loading -> SearchLoadingState()
             is SearchUiState.Success -> SearchResults(
-                movies = state.movies,
+                movies = uiState.movies,
                 onMovieClick = onMovieClick
             )
-            is SearchUiState.Error -> ShowErrorMessage(message = state.message)
+            is SearchUiState.Error -> ShowErrorMessage(message = uiState.message)
             is SearchUiState.Empty -> NoResultsFound()
         }
     }
