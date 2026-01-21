@@ -1,6 +1,7 @@
-package com.kerosene.absolutecinema.data.di
+package com.kerosene.absolutecinema.di
 
 import android.content.Context
+import androidx.room.Room
 import com.kerosene.absolutecinema.data.local.db.FavouriteDatabase
 import com.kerosene.absolutecinema.data.local.db.FavouriteMoviesDao
 import com.kerosene.absolutecinema.data.local.db.NotesDao
@@ -17,45 +18,56 @@ import com.kerosene.absolutecinema.domain.repository.SearchRepository
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
+import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
+import dagger.hilt.components.SingletonComponent
+import javax.inject.Singleton
 
 @Module
+@InstallIn(SingletonComponent::class)
 interface DataModule {
 
-    @ApplicationScope
+    @Singleton
     @Binds
     fun bindFavouriteRepository(impl: FavouriteRepositoryImpl): FavouriteRepository
 
-    @ApplicationScope
+    @Singleton
     @Binds
     fun bindMovieRepository(impl: MovieRepositoryImpl): MovieRepository
 
-    @ApplicationScope
+    @Singleton
     @Binds
     fun bindNoteRepository(impl: NoteRepositoryImpl): NoteRepository
 
-    @ApplicationScope
+    @Singleton
     @Binds
     fun bindSearchRepository(impl: SearchRepositoryImpl): SearchRepository
 
     companion object {
 
-        @ApplicationScope
+        @Singleton
         @Provides
         fun provideService(): ApiService = ApiFactory.apiService
 
-        @ApplicationScope
+        @Singleton
         @Provides
-        fun provideFavouriteDatabase(context: Context): FavouriteDatabase {
-            return FavouriteDatabase.getInstance(context)
+        fun provideFavouriteDatabase(
+            @ApplicationContext context: Context
+        ): FavouriteDatabase {
+            return Room.databaseBuilder(
+                context = context,
+                klass = FavouriteDatabase::class.java,
+                name = "favourite_database.db"
+            ).build()
         }
 
-        @ApplicationScope
+        @Singleton
         @Provides
         fun provideFavoriteMoviesDao(database: FavouriteDatabase): FavouriteMoviesDao {
             return database.favouriteMoviesDao()
         }
 
-        @ApplicationScope
+        @Singleton
         @Provides
         fun provideNotesDao(database: FavouriteDatabase): NotesDao {
             return database.notesDao()
