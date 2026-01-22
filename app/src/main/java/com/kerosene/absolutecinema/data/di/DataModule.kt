@@ -1,12 +1,10 @@
-package com.kerosene.absolutecinema.di
+package com.kerosene.absolutecinema.data.di
 
 import android.content.Context
 import androidx.room.Room
 import com.kerosene.absolutecinema.data.local.db.FavouriteDatabase
 import com.kerosene.absolutecinema.data.local.db.FavouriteMoviesDao
 import com.kerosene.absolutecinema.data.local.db.NotesDao
-import com.kerosene.absolutecinema.data.network.api.ApiFactory
-import com.kerosene.absolutecinema.data.network.api.ApiService
 import com.kerosene.absolutecinema.data.repository.FavouriteRepositoryImpl
 import com.kerosene.absolutecinema.data.repository.MovieRepositoryImpl
 import com.kerosene.absolutecinema.data.repository.NoteRepositoryImpl
@@ -44,10 +42,6 @@ interface DataModule {
     fun bindSearchRepository(impl: SearchRepositoryImpl): SearchRepository
 
     companion object {
-
-        @Singleton
-        @Provides
-        fun provideService(): ApiService = ApiFactory.apiService
 
         @Singleton
         @Provides
