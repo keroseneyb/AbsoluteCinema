@@ -4,11 +4,11 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
-import com.kerosene.absolutecinema.presentation.di.qualifers.AppContext
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 
 class OpenTrailerHelper @Inject constructor(
-    @AppContext private val context: Context,
+    @ApplicationContext private val context: Context,
 ) {
     fun openTrailer(url: String) {
         if (url.isEmpty()) return

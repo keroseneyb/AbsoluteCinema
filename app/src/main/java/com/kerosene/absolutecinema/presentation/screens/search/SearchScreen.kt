@@ -52,6 +52,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.kerosene.absolutecinema.R
@@ -59,10 +60,9 @@ import com.kerosene.absolutecinema.presentation.screens.search.model.MovieSearch
 
 @Composable
 fun SearchScreen(
-    viewModel: SearchViewModel,
+    viewModel: SearchViewModel = hiltViewModel(),
     onBackClick: () -> Unit,
     onMovieClick: (Int) -> Unit,
-    onQueryChange: (String) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val query by viewModel.query.collectAsState()
@@ -83,7 +83,7 @@ fun SearchScreen(
         keyboardController = keyboardController,
         onBackClick = onBackClick,
         onMovieClick = onMovieClick,
-        onQueryChange = onQueryChange
+        onQueryChange = { newQuery -> viewModel.onQueryChange(newQuery) }
     )
 }
 

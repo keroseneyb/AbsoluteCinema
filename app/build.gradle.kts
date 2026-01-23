@@ -5,9 +5,9 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
-    alias(libs.plugins.kapt)
     alias(libs.plugins.kotlin.parcelize)
     alias(libs.plugins.serialization)
+    alias(libs.plugins.dagger.hilt)
 }
 
 android {
@@ -59,9 +59,10 @@ androidComponents {
 }
 
 dependencies {
-    // Dependency Injection
-    implementation(libs.dagger.core)
-    kapt(libs.dagger.compiler)
+    // Dagger Hilt
+    implementation(libs.dagger.hilt.lib)
+    implementation(libs.dagger.hilt.navigation.compose)
+    ksp(libs.dagger.hilt.compiler)
 
     // Database (Room)
     implementation(libs.androidx.room.runtime)

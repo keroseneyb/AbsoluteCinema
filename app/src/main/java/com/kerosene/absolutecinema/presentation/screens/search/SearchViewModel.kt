@@ -6,6 +6,7 @@ import com.kerosene.absolutecinema.domain.usecase.SearchMovieUseCase
 import com.kerosene.absolutecinema.presentation.screens.search.mapping.toSearchUiModels
 import com.kerosene.absolutecinema.presentation.screens.search.model.MovieSearchUiModel
 import com.kerosene.absolutecinema.presentation.utils.Constants
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
@@ -26,6 +27,7 @@ import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
+@HiltViewModel
 class SearchViewModel @Inject constructor(
     private val searchMovieUseCase: SearchMovieUseCase,
 ) : ViewModel() {

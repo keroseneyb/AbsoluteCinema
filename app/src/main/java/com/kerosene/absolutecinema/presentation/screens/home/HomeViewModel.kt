@@ -9,6 +9,7 @@ import com.kerosene.absolutecinema.domain.usecase.GetMoviesPagedUseCase
 import com.kerosene.absolutecinema.domain.usecase.GetPopularPagedMoviesUseCase
 import com.kerosene.absolutecinema.presentation.screens.home.mapping.toMoviePreviewUiModel
 import com.kerosene.absolutecinema.presentation.screens.home.model.MoviePreviewUiModel
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,6 +17,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import javax.inject.Inject
 
+@HiltViewModel
 class HomeViewModel @Inject constructor(
     private val getPopularPagedMoviesUseCase: GetPopularPagedMoviesUseCase,
     private val getMoviesPagedUseCase: GetMoviesPagedUseCase

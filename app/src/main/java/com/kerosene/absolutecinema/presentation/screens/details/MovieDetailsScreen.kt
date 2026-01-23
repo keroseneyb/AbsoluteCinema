@@ -40,6 +40,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.bumptech.glide.integration.compose.GlideImage
 import com.kerosene.absolutecinema.R
@@ -50,7 +51,7 @@ import com.kerosene.absolutecinema.presentation.screens.details.model.MovieDetai
 
 @Composable
 fun MovieDetailsScreen(
-    viewModel: MovieDetailsViewModel,
+    viewModel: MovieDetailsViewModel = hiltViewModel(),
     movieId: Int
 ) {
     val uiState by viewModel.state.collectAsState()

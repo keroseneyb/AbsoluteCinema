@@ -9,6 +9,7 @@ import com.kerosene.absolutecinema.domain.usecase.GetMovieNotesUseCase
 import com.kerosene.absolutecinema.domain.usecase.ToggleFavouriteStatusUseCase
 import com.kerosene.absolutecinema.presentation.screens.library.favourites.mapping.toMoviesLibraryUiModels
 import com.kerosene.absolutecinema.presentation.utils.Constants
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,6 +23,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+@HiltViewModel
 class LibraryViewModel @Inject constructor(
     private val getFavouriteMoviesUseCase: GetFavouriteMoviesUseCase,
     private val getMovieNotesUseCase: GetMovieNotesUseCase,
